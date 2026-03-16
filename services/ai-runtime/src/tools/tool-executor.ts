@@ -1,0 +1,309 @@
+import { db, employees } from '@palette/db';
+import { eq } from 'drizzle-orm';
+
+const LEAVE_SERVICE_URL = process.env.LEAVE_SERVICE_URL || 'http://localhost:3001/api/v1';
+const APPROVAL_SERVICE_URL = process.env.APPROVAL_SERVICE_URL || 'http://localhost:3002/api/v1';
+const MESSAGING_SERVICE_URL = process.env.MESSAGING_SERVICE_URL || 'http://localhost:3000/api/v1';
+const AI_RUNTIME_URL = process.env.AI_RUNTIME_URL || 'http://localhost:3100/api/v1';
+
+const DELEGATION_TIMEOUT_MS = 10_000;
+const DEFAULT_MAX_DEPTH = 3;
+
+export interface DelegationContext {
+  originUserId: string;
+  originChannelId: string;
+  delegationChain: string[];
+  depth: number;
+  maxDepth: number;
+}
+
+export interface ToolResult {
+  success: boolean;
+  data?: unknown;
+  error?: string;
+}
+
+export async function executeTool(
+  toolName: string,
+  input: Record<string, unknown>,
+  _senderUserId: string,
+  delegationCtx?: DelegationContext,
+): Promise<ToolResult> {
+  try {
+    switch (toolName) {
+      case 'query_leave_balance':
+        return await queryLeaveBalance(input.employee_id as string);
+      case 'validate_date':
+        return await validateDate(input);
+      case 'submit_leave_request':
+        return await submitLeaveRequest(input);
+      case 'search_policy':
+        return await searchPolicy(input.query as string);
+      case 'analyze_intent':
+        // Internal tool - LLM outputs this directly, no external call needed
+        return { success: true, data: input };
+      case 'check_team_schedule':
+      case 'check_team_leaves':
+        return await checkTeamSchedule(input);
+      case 'approve_request':
+        return await decideApproval(input.approval_id as string, 'approved', input.comment as string);
+      case 'reject_request':
+        return await decideApproval(input.approval_id as string, 'rejected', input.comment as string);
+      case 'call_person':
+        return await callPerson(input.callee_id as string);
+      case 'query_employee_schedule':
+        return await queryEmployeeSchedule(input.employee_id as string);
+      case 'get_team_summary':
+        return await getTeamSummary(input.team_id as string);
+      case 'delegate_to_agent':
+        return await delegateToAgent(input, delegationCtx);
+      case 'invite_agent_to_channel':
+        return await inviteAgentToChannel(input);
+      case 'broadcast_to_team':
+        return await broadcastToTeam(input, delegationCtx);
+      default:
+        return { success: false, error: `Unknown tool: ${toolName}` };
+    }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Tool execution failed' };
+  }
+}
+
+async function queryLeaveBalance(employeeId: string): Promise<ToolResult> {
+  const res = await fetch(`${LEAVE_SERVICE_URL}/leave/balance/${employeeId}`);
+  if (!res.ok) return { success: false, error: `Failed to query balance: ${res.status}` };
+  return { success: true, data: await res.json() };
+}
+
+async function validateDate(input: Record<string, unknown>): Promise<ToolResult> {
+  const res = await fetch(`${LEAVE_SERVICE_URL}/leave/validate-date`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) return { success: false, error: `Failed to validate date: ${res.status}` };
+  return { success: true, data: await res.json() };
+}
+
+async function submitLeaveRequest(input: Record<string, unknown>): Promise<ToolResult> {
+  const res = await fetch(`${LEAVE_SERVICE_URL}/leave/request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    return {
+      success: false,
+      error: (err as Record<string, Record<string, string>>)?.error?.message || `Failed to submit: ${res.status}`,
+    };
+  }
+  return { success: true, data: await res.json() };
+}
+
+async function searchPolicy(_query: string): Promise<ToolResult> {
+  // For now, return default policy info. In production, this queries leave-policies.
+  return { success: true, data: { query: _query, result: 'LP-DEFAULT 규정: 연차 15일, 반차 가능, 병가 별도' } };
+}
+
+async function checkTeamSchedule(input: Record<string, unknown>): Promise<ToolResult> {
+  const teamId = input.team_id as string;
+  const date = input.date as string;
+  const res = await fetch(
+    `${LEAVE_SERVICE_URL}/leave/requests?team_id=${teamId}&date=${date}&status=approved`,
+  );
+  if (!res.ok) return { success: false, error: `Failed to check schedule: ${res.status}` };
+  return { success: true, data: await res.json() };
+}
+
+async function decideApproval(
+  approvalId: string,
+  decision: string,
+  comment?: string,
+): Promise<ToolResult> {
+  const res = await fetch(`${APPROVAL_SERVICE_URL}/approvals/${approvalId}/decide`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ decision, decided_by: 'system', comment }),
+  });
+  if (!res.ok) return { success: false, error: `Failed to decide: ${res.status}` };
+  return { success: true, data: await res.json() };
+}
+
+async function queryEmployeeSchedule(employeeId: string): Promise<ToolResult> {
+  const res = await fetch(
+    `${LEAVE_SERVICE_URL}/leave/requests?employee_id=${employeeId}&status=approved`,
+  );
+  if (!res.ok) return { success: false, error: `Failed to query schedule: ${res.status}` };
+  return { success: true, data: await res.json() };
+}
+
+async function getTeamSummary(teamId: string): Promise<ToolResult> {
+  const month = new Date().toISOString().slice(0, 7);
+  const res = await fetch(
+    `${LEAVE_SERVICE_URL}/leave/team-schedule?teamId=${teamId}&month=${month}`,
+  );
+  if (!res.ok) return { success: false, error: `Failed to get team summary: ${res.status}` };
+  return { success: true, data: await res.json() };
+}
+
+async function callPerson(calleeId: string): Promise<ToolResult> {
+  const res = await fetch(`${MESSAGING_SERVICE_URL}/messenger/call`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ callee_id: calleeId }),
+  });
+  if (!res.ok) return { success: false, error: `Call failed: ${res.status}` };
+  return { success: true, data: await res.json() };
+}
+
+// ─── Orchestration Tools ─────────────────────────────────────────────────────
+
+async function delegateToAgent(
+  input: Record<string, unknown>,
+  ctx?: DelegationContext,
+): Promise<ToolResult> {
+  const targetUserId = input.target_user_id as string;
+  const taskMessage = input.task_message as string;
+  const taskContext = input.context as string | undefined;
+
+  const currentCtx: DelegationContext = ctx ?? {
+    originUserId: 'unknown',
+    originChannelId: 'unknown',
+    delegationChain: [],
+    depth: 0,
+    maxDepth: DEFAULT_MAX_DEPTH,
+  };
+
+  // Safety: depth check
+  if (currentCtx.depth >= currentCtx.maxDepth) {
+    return { success: false, error: `위임 깊이 초과 (최대 ${currentCtx.maxDepth}단계)` };
+  }
+
+  // Safety: loop detection
+  if (currentCtx.delegationChain.includes(targetUserId)) {
+    return {
+      success: false,
+      error: `순환 위임 감지: ${currentCtx.delegationChain.join(' → ')} → ${targetUserId}`,
+    };
+  }
+
+  const delegationMessage = taskContext
+    ? `[위임 요청] ${taskMessage}\n\n맥락: ${taskContext}`
+    : `[위임 요청] ${taskMessage}`;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), DELEGATION_TIMEOUT_MS);
+
+    const res = await fetch(`${AI_RUNTIME_URL}/runtime/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        llm_user_id: targetUserId,
+        channel_id: currentCtx.originChannelId,
+        user_message: delegationMessage,
+        sender_user_id: currentCtx.originUserId,
+        delegation_context: {
+          originUserId: currentCtx.originUserId,
+          originChannelId: currentCtx.originChannelId,
+          delegationChain: [...currentCtx.delegationChain, targetUserId],
+          depth: currentCtx.depth + 1,
+          maxDepth: currentCtx.maxDepth,
+        },
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      return { success: false, error: `위임 실패 (${targetUserId}): HTTP ${res.status}` };
+    }
+
+    const result = (await res.json()) as { text?: string; tool_calls?: unknown[] };
+    return {
+      success: true,
+      data: {
+        delegated_to: targetUserId,
+        response_text: result.text,
+        tool_calls_made: result.tool_calls?.length ?? 0,
+      },
+    };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { success: false, error: `위임 타임아웃 (${targetUserId}): ${DELEGATION_TIMEOUT_MS}ms 초과` };
+    }
+    return { success: false, error: `위임 실패 (${targetUserId}): ${error instanceof Error ? error.message : 'unknown'}` };
+  }
+}
+
+async function inviteAgentToChannel(input: Record<string, unknown>): Promise<ToolResult> {
+  const targetUserId = input.target_user_id as string;
+  const channelId = input.channel_id as string;
+
+  const res = await fetch(`${MESSAGING_SERVICE_URL}/messenger/channel/invite`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ channel_id: channelId, user_id: targetUserId }),
+  });
+
+  if (!res.ok) {
+    return { success: false, error: `채널 초대 실패: ${res.status}` };
+  }
+  return { success: true, data: await res.json() };
+}
+
+async function broadcastToTeam(
+  input: Record<string, unknown>,
+  ctx?: DelegationContext,
+): Promise<ToolResult> {
+  const teamId = input.team_id as string;
+  const message = input.message as string;
+
+  try {
+    // Query team members from DB
+    const teamMembers = await db
+      .select({ id: employees.id, name: employees.name })
+      .from(employees)
+      .where(eq(employees.teamId, teamId));
+
+    if (teamMembers.length === 0) {
+      return { success: false, error: `팀 ${teamId}에 소속된 직원이 없습니다` };
+    }
+
+    // Filter out the origin user (don't delegate to self)
+    const targets = ctx
+      ? teamMembers.filter((m) => !ctx.delegationChain.includes(m.id))
+      : teamMembers;
+
+    if (targets.length === 0) {
+      return { success: false, error: '전파 대상이 없습니다 (모두 이미 위임 체인에 포함)' };
+    }
+
+    // Delegate to each team member in parallel
+    const results = await Promise.allSettled(
+      targets.map((member) =>
+        delegateToAgent({ target_user_id: member.id, task_message: message }, ctx),
+      ),
+    );
+
+    const responses = results.map((r, i) => ({
+      employee_id: targets[i].id,
+      employee_name: targets[i].name,
+      status: r.status === 'fulfilled' ? (r.value.success ? 'success' : 'failed') : 'error',
+      response: r.status === 'fulfilled' ? r.value.data : r.reason?.message,
+    }));
+
+    return {
+      success: true,
+      data: {
+        team_id: teamId,
+        total_members: targets.length,
+        responses,
+      },
+    };
+  } catch (error) {
+    return { success: false, error: `팀 전파 실패: ${error instanceof Error ? error.message : 'unknown'}` };
+  }
+}

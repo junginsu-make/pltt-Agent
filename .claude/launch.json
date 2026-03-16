@@ -1,0 +1,43 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "messenger",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@palette/messenger", "dev"],
+      "port": 3010
+    },
+    {
+      "name": "admin",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
+      "port": 3020,
+      "autoPort": true,
+      "cwd": "apps/admin"
+    },
+    {
+      "name": "messaging-server",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@palette/messaging-server", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "ai-runtime",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@palette/ai-runtime", "dev"],
+      "port": 3100
+    },
+    {
+      "name": "leave-service",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@palette/leave-service", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "approval-service",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@palette/approval-service", "dev"],
+      "port": 3002
+    }
+  ]
+}

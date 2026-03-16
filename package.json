@@ -1,0 +1,33 @@
+{
+  "name": "palette-platform",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Palette AI - 모든 직원에게 AI 비서가 붙은 회사 메신저",
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "test:coverage": "pnpm -r run test:coverage",
+    "lint": "pnpm -r run lint",
+    "type-check": "pnpm -r run type-check",
+    "db:generate": "pnpm --filter @palette/db generate",
+    "db:push": "pnpm --filter @palette/db push",
+    "db:seed": "pnpm --filter @palette/db seed",
+    "db:studio": "pnpm --filter @palette/db studio",
+    "clean": "pnpm -r run clean",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "typescript-eslint": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0",
+    "vitest": "^3.0.0"
+  }
+}
