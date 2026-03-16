@@ -24,8 +24,8 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   // System messages
   if (message.senderType === 'system') {
     return (
-      <div className="flex justify-center px-4 py-1">
-        <span className="text-xs text-text-secondary">
+      <div className="flex justify-center px-4 py-2">
+        <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] text-gray-500">
           {message.contentText}
         </span>
       </div>
@@ -52,79 +52,79 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     | { from?: string; chain?: string[] }
     | undefined;
 
-  // Human message - right aligned if me
+  // My message - right aligned (KakaoTalk style)
   if (isMe) {
     return (
-      <div className="flex justify-end px-4 py-1">
-        <div className="max-w-md">
-          <div className="rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm text-white">
-            {cardContent || message.contentText}
-          </div>
-          <div className="mt-0.5 text-right text-xs text-text-secondary">
+      <div className="flex justify-end px-4 py-0.5">
+        <div className="flex items-end gap-1.5">
+          <span className="mb-1 text-[10px] text-gray-400">
             {formatTime(message.createdAt)}
+          </span>
+          <div className="max-w-xs rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-sm leading-relaxed text-white shadow-sm sm:max-w-sm">
+            {cardContent || message.contentText}
           </div>
         </div>
       </div>
     );
   }
 
-  // LLM message
+  // LLM message - purple accent
   if (isLlm) {
     return (
-      <div className="flex gap-2 px-4 py-1">
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-purple-200 text-xs font-bold text-purple-700">
+      <div className="flex gap-2.5 px-4 py-0.5">
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-[10px] font-bold text-white shadow-sm">
           AI
         </div>
-        <div className="max-w-md">
-          <div className="mb-0.5 flex items-center gap-1.5">
-            <span className="text-xs font-medium text-text-primary">
+        <div className="max-w-xs sm:max-w-sm">
+          <div className="mb-1 flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-gray-800">
               {message.displayName}
             </span>
-            <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700">
+            <span className="rounded-full bg-purple-100 px-1.5 py-px text-[9px] font-bold text-purple-600">
               AI
             </span>
             {message.isLlmAuto && (
-              <span className="text-[10px] text-text-secondary">자동</span>
+              <span className="text-[10px] text-gray-400">자동</span>
             )}
             {delegationInfo?.from && (
-              <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
-                위임 응답
+              <span className="rounded-full bg-blue-100 px-1.5 py-px text-[9px] font-bold text-blue-600">
+                위임
               </span>
             )}
           </div>
-          <div className="rounded-2xl rounded-tl-sm bg-purple-50 px-4 py-2.5 text-sm text-text-primary">
+          <div className="rounded-2xl rounded-tl-md border border-purple-100 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-gray-800 shadow-sm">
             {cardContent || message.contentText}
           </div>
-          <div className="mt-0.5 text-xs text-text-secondary">
+          <span className="mt-0.5 block text-[10px] text-gray-400">
             {formatTime(message.createdAt)}
-          </div>
+          </span>
         </div>
       </div>
     );
   }
 
-  // Human takeover message - green badge
+  // Human takeover message - green accent
   if (isHumanTakeover) {
     return (
-      <div className="flex gap-2 px-4 py-1">
-        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-green-200 text-xs font-bold text-green-700">
+      <div className="flex gap-2.5 px-4 py-0.5">
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-xs font-bold text-white shadow-sm">
           {message.displayName.charAt(0)}
         </div>
-        <div className="max-w-md">
-          <div className="mb-0.5 flex items-center gap-1.5">
-            <span className="text-xs font-medium text-text-primary">
+        <div className="max-w-xs sm:max-w-sm">
+          <div className="mb-1 flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-gray-800">
               {message.displayName}
             </span>
-            <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">
+            <span className="rounded-full bg-green-100 px-1.5 py-px text-[9px] font-bold text-green-600">
               직접 응답
             </span>
           </div>
-          <div className="rounded-2xl rounded-tl-sm bg-green-50 px-4 py-2.5 text-sm text-text-primary">
+          <div className="rounded-2xl rounded-tl-md border border-green-100 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-gray-800 shadow-sm">
             {cardContent || message.contentText}
           </div>
-          <div className="mt-0.5 text-xs text-text-secondary">
+          <span className="mt-0.5 block text-[10px] text-gray-400">
             {formatTime(message.createdAt)}
-          </div>
+          </span>
         </div>
       </div>
     );
@@ -132,20 +132,20 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
 
   // Other human message - left aligned
   return (
-    <div className="flex gap-2 px-4 py-1">
-      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-text-secondary">
+    <div className="flex gap-2.5 px-4 py-0.5">
+      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-600">
         {message.displayName.charAt(0)}
       </div>
-      <div className="max-w-md">
-        <div className="mb-0.5 text-xs font-medium text-text-primary">
+      <div className="max-w-xs sm:max-w-sm">
+        <div className="mb-1 text-xs font-semibold text-gray-800">
           {message.displayName}
         </div>
-        <div className="rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-2.5 text-sm text-text-primary">
+        <div className="rounded-2xl rounded-tl-md bg-white px-3.5 py-2.5 text-sm leading-relaxed text-gray-800 shadow-sm">
           {cardContent || message.contentText}
         </div>
-        <div className="mt-0.5 text-xs text-text-secondary">
+        <span className="mt-0.5 block text-[10px] text-gray-400">
           {formatTime(message.createdAt)}
-        </div>
+        </span>
       </div>
     </div>
   );

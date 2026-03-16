@@ -58,33 +58,50 @@ export default function MessageInput({
     }
   };
 
+  const canSend = isConnected && text.trim().length > 0;
+
   return (
-    <div className="border-t border-gray-200 bg-surface p-4">
+    <div className="border-t border-gray-200 bg-white px-4 py-3">
       <div className="flex items-end gap-2">
-        <textarea
-          value={text}
-          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
-            setText(e.target.value);
-            handleTyping();
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            isConnected
-              ? '메시지를 입력하세요...'
-              : '서버에 연결 중...'
-          }
-          disabled={!isConnected}
-          rows={1}
-          className="flex-1 resize-none rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-text-primary placeholder-text-secondary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-gray-50"
-        />
+        <div className="relative flex-1">
+          <textarea
+            value={text}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
+              setText(e.target.value);
+              handleTyping();
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              isConnected
+                ? '메시지를 입력하세요... (Enter로 전송)'
+                : '서버에 연결 중...'
+            }
+            disabled={!isConnected}
+            rows={1}
+            className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 pr-12 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/10 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+          />
+        </div>
         <button
           onClick={handleSend}
-          disabled={!isConnected || !text.trim()}
-          className="flex-shrink-0 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!canSend}
+          className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
+            canSend
+              ? 'bg-primary text-white shadow-md shadow-primary/25 hover:shadow-lg'
+              : 'bg-gray-100 text-gray-300'
+          }`}
         >
-          전송
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7" />
+          </svg>
         </button>
       </div>
+
+      {!isConnected && (
+        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-600">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+          서버에 연결 중입니다...
+        </div>
+      )}
     </div>
   );
 }

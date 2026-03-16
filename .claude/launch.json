@@ -3,9 +3,11 @@
   "configurations": [
     {
       "name": "messenger",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@palette/messenger", "dev"],
-      "port": 3010
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
+      "port": 3010,
+      "autoPort": true,
+      "cwd": "apps/messenger"
     },
     {
       "name": "admin",

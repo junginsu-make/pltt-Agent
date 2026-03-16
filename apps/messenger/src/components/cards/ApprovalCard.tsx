@@ -32,28 +32,28 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
   };
 
   return (
-    <div className="w-80 rounded-xl border border-gray-200 bg-surface p-4">
-      <h3 className="mb-3 text-sm font-semibold text-text-primary">
+    <div className="w-80 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <h3 className="mb-3 text-sm font-semibold text-gray-900">
         휴가 승인 요청
       </h3>
 
       <div className="mb-3 space-y-1.5 text-sm">
         <div className="flex justify-between">
-          <span className="text-text-secondary">신청자</span>
-          <span className="font-medium text-text-primary">{employeeName}</span>
+          <span className="text-gray-500">신청자</span>
+          <span className="font-medium text-gray-900">{employeeName}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-text-secondary">일자</span>
-          <span className="font-medium text-text-primary">{date}</span>
+          <span className="text-gray-500">일자</span>
+          <span className="font-medium text-gray-900">{date}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-text-secondary">유형</span>
-          <span className="font-medium text-text-primary">{leaveType}</span>
+          <span className="text-gray-500">유형</span>
+          <span className="font-medium text-gray-900">{leaveType}</span>
         </div>
         {reason && (
           <div className="flex justify-between">
-            <span className="text-text-secondary">사유</span>
-            <span className="font-medium text-text-primary">{reason}</span>
+            <span className="text-gray-500">사유</span>
+            <span className="font-medium text-gray-900">{reason}</span>
           </div>
         )}
       </div>
@@ -67,13 +67,13 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
             </span>
           </div>
           {aiAnalysis.scheduleConflict !== undefined && (
-            <div className="text-xs text-text-secondary">
+            <div className="text-xs text-gray-500">
               일정 충돌:{' '}
               <span
                 className={
                   aiAnalysis.scheduleConflict
-                    ? 'font-medium text-error'
-                    : 'font-medium text-success'
+                    ? 'font-medium text-red-600'
+                    : 'font-medium text-green-600'
                 }
               >
                 {aiAnalysis.scheduleConflict ? '있음' : '없음'}
@@ -81,7 +81,7 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
             </div>
           )}
           {aiAnalysis.recommendation ? (
-            <div className="mt-1 text-xs text-text-secondary">
+            <div className="mt-1 text-xs text-gray-500">
               추천: {String(aiAnalysis.recommendation)}
             </div>
           ) : null}
@@ -90,7 +90,7 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
 
       {/* Auto-approve countdown */}
       {autoApproveAt && !decided && (
-        <div className="mb-3 text-center text-xs text-text-secondary">
+        <div className="mb-3 text-center text-xs text-gray-400">
           자동 승인: {autoApproveAt}
         </div>
       )}
@@ -101,20 +101,20 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
           <button
             onClick={() => handleDecide('approve')}
             disabled={isSubmitting}
-            className="flex-1 rounded-lg bg-success px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-success/90 disabled:opacity-50"
+            className="flex-1 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-600 disabled:opacity-50"
           >
             승인
           </button>
           <button
             onClick={() => handleDecide('reject')}
             disabled={isSubmitting}
-            className="flex-1 rounded-lg bg-error px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-error/90 disabled:opacity-50"
+            className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
           >
             반려
           </button>
         </div>
       ) : (
-        <div className="text-center text-sm font-medium text-success">
+        <div className="text-center text-sm font-medium text-green-600">
           처리 완료
         </div>
       )}
