@@ -113,9 +113,9 @@ palette-platform/
 
 | 항목 | 상태 | 최종 업데이트 |
 |------|------|--------------|
-| **현재 버전** | v0.3.0 | 2026-03-18 |
-| **현재 Phase** | Phase 5 (Admin + 통합) | 2026-03-18 |
-| **다음 마일스톤** | T5.2 E2E 시나리오 테스트 | 2026-03-18 |
+| **현재 버전** | v0.4.0 | 2026-03-18 |
+| **현재 Phase** | Phase 5 완료 (코드 작성) | 2026-03-18 |
+| **다음 마일스톤** | Docker 환경에서 E2E 실행 검증 | 2026-03-18 |
 
 ### Phase 진행 현황
 
@@ -125,7 +125,7 @@ palette-platform/
 | Phase 2: 셋업 | 완료 | 2026-03-16 | 2026-03-16 | 스캐폴딩 + 에이전트 팀 |
 | Phase 3: AGENTS.md + 보안 보강 | 완료 | 2026-03-18 | 2026-03-18 | 거버넌스 규칙 + 보안 하드닝 |
 | Phase 4: 인프라 구축 | 완료 | 2026-03-18 | 2026-03-18 | notification, scheduler, error handler |
-| Phase 5: Admin + 통합 | 진행중 | 2026-03-18 | - | T5.1 완료, T5.2/T5.3 대기 |
+| Phase 5: Admin + 통합 | 코드 완료 | 2026-03-18 | 2026-03-18 | T5.1~T5.3 코드 작성 완료 (E2E 실행은 Docker 필요) |
 
 ### 업데이트 로그
 
@@ -144,6 +144,18 @@ palette-platform/
 ### Notes
 - 다음 작업: Phase 3 AGENTS.md 시스템 생성
 - 전체 파일 수: 74+
+
+## [2026-03-18] v0.4.0 - E2E 테스트 완성 (T5.2 + T5.3)
+
+### Added
+- T5.2 시나리오 E2E: scenario-a (휴가 신청→승인), scenario-b (대표 호출→DM), scenario-c (Human Takeover)
+- T5.3 에러 케이스 E2E: E-01~E-18 (18개 에러 케이스 Playwright 테스트)
+- test-data.ts: Page Object Model 셀렉터, 테스트 유저 상수, 타임아웃 설정
+- 총 1,874줄 E2E 테스트 코드
+
+### Notes
+- Docker 환경에서 실행 필요: `docker compose up -d && pnpm dev && npx playwright test`
+- Admin 단위 테스트 39/39 통과 확인 (리그레션 없음)
 
 ## [2026-03-18] v0.3.0 - Admin 완성 (T5.1) + 인프라 구축
 
