@@ -41,6 +41,35 @@ export default function LeavePolicyPage() {
     }
   };
 
+  const handleCancel = () => {
+    if (policy) {
+      setFormData(policy);
+    }
+    setEditMode(false);
+  };
+
+  const handleLeaveTypeChange = (
+    idx: number,
+    field: keyof LeaveType,
+    value: string | number
+  ) => {
+    if (!formData) return;
+    setFormData({
+      ...formData,
+      leaveTypes: formData.leaveTypes.map((lt, i) =>
+        i === idx ? { ...lt, [field]: value } : lt
+      ),
+    });
+  };
+
+  const handleAutoApproveHoursChange = (value: number) => {
+    if (!formData) return;
+    setFormData({
+      ...formData,
+      autoApprove: { ...formData.autoApprove, maxHours: value },
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -53,12 +82,22 @@ export default function LeavePolicyPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-text-primary">연차 규정</h1>
-        <button
-          onClick={() => (editMode ? handleSave() : setEditMode(true))}
-          className="rounded-md bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90"
-        >
-          {editMode ? '저장' : '수정'}
-        </button>
+        <div className="flex gap-2">
+          {editMode && (
+            <button
+              onClick={handleCancel}
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-text-primary hover:bg-gray-50"
+            >
+              취소
+            </button>
+          )}
+          <button
+            onClick={() => (editMode ? handleSave() : setEditMode(true))}
+            className="rounded-md bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90"
+          >
+            {editMode ? '저장' : '수정'}
+          </button>
+        </div>
       </div>
 
       <div className="rounded-lg bg-surface p-6 shadow-sm border border-gray-100">
@@ -76,11 +115,44 @@ export default function LeavePolicyPage() {
                   className="flex items-center gap-4 p-3 rounded-md border border-gray-200"
                 >
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-text-primary">{lt.label}</p>
-                    <p className="text-xs text-text-secondary">유형: {lt.type}</p>
+                    {editMode ? (
+                      <input
+                        data-testid="leave-label-input"
+                        type="text"
+                        value={lt.label}
+                        onChange={(e) =>
+                          handleLeaveTypeChange(idx, 'label', e.target.value)
+                        }
+                        className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm text-text-primary focus:border-primary focus:outline-none"
+                      />
+                    ) : (
+                      <p className="text-sm font-medium text-text-primary">{lt.label}</p>
+                    )}
+                    <p className="text-xs text-text-secondary mt-1">유형: {lt.type}</p>
                   </div>
                   <div className="text-sm text-text-primary">
-                    기본 {lt.defaultDays}일
+                    {editMode ? (
+                      <div className="flex items-center gap-2">
+                        <span>기본</span>
+                        <input
+                          data-testid="default-days-input"
+                          type="number"
+                          value={lt.defaultDays}
+                          onChange={(e) =>
+                            handleLeaveTypeChange(
+                              idx,
+                              'defaultDays',
+                              parseInt(e.target.value, 10) || 0
+                            )
+                          }
+                          className="w-20 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-text-primary focus:border-primary focus:outline-none"
+                          min={0}
+                        />
+                        <span>일</span>
+                      </div>
+                    ) : (
+                      <>기본 {lt.defaultDays}일</>
+                    )}
                   </div>
                 </div>
               )) || (
@@ -91,11 +163,35 @@ export default function LeavePolicyPage() {
 
           <div>
             <h3 className="text-sm font-medium text-text-primary mb-2">자동 승인 설정</h3>
-            <p className="text-sm text-text-secondary">
-              {formData?.autoApprove
-                ? JSON.stringify(formData.autoApprove, null, 2)
-                : '자동 승인 설정이 없습니다.'}
-            </p>
+            {editMode ? (
+              <div className="flex items-center gap-2">
+                <label htmlFor="auto-approve-hours" className="text-sm text-text-secondary">
+                  최대 자동 승인 시간:
+                </label>
+                <input
+                  id="auto-approve-hours"
+                  data-testid="auto-approve-hours-input"
+                  type="number"
+                  value={
+                    (formData?.autoApprove as Record<string, number>)?.maxHours ?? 0
+                  }
+                  onChange={(e) =>
+                    handleAutoApproveHoursChange(
+                      parseInt(e.target.value, 10) || 0
+                    )
+                  }
+                  className="w-20 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-text-primary focus:border-primary focus:outline-none"
+                  min={0}
+                />
+                <span className="text-sm text-text-secondary">시간</span>
+              </div>
+            ) : (
+              <p className="text-sm text-text-secondary">
+                {formData?.autoApprove
+                  ? JSON.stringify(formData.autoApprove, null, 2)
+                  : '자동 승인 설정이 없습니다.'}
+              </p>
+            )}
           </div>
 
           <div>

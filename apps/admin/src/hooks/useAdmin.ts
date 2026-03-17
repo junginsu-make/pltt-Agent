@@ -86,6 +86,71 @@ export function useUpdateLeavePolicy() {
   });
 }
 
+// --- Teams ---
+
+interface Team {
+  id: string;
+  name: string;
+  managerId?: string;
+  managerName?: string;
+  memberCount: number;
+}
+
+interface TeamsResponse {
+  data: Team[];
+}
+
+interface EmployeeListItem {
+  id: string;
+  name: string;
+}
+
+export function useTeams() {
+  return useQuery<TeamsResponse>({
+    queryKey: ['teams'],
+    queryFn: async () => {
+      const res = await api.get('/admin/teams');
+      return res.data;
+    },
+  });
+}
+
+export function useAddTeam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { name: string; managerId?: string }) => {
+      const res = await api.post('/admin/teams', data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+    },
+  });
+}
+
+export function useUpdateTeam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { name: string; managerId?: string } }) => {
+      const res = await api.put(`/admin/teams/${id}`, data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+    },
+  });
+}
+
+export function useEmployeeList() {
+  return useQuery<EmployeeListItem[]>({
+    queryKey: ['employee-list'],
+    queryFn: async () => {
+      const res = await api.get('/admin/employees', { params: { fields: 'id,name' } });
+      return res.data.data ?? res.data;
+    },
+  });
+}
+
 // --- Audit Log ---
 
 interface AuditEntry {
