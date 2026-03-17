@@ -10,6 +10,8 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/explicit-function-return-type': ['warn', { allowExpressions: true }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'eqeqeq': ['error', 'always'],
+      'no-eval': 'error',
     },
   },
   {

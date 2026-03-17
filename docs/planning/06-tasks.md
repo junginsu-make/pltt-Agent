@@ -213,8 +213,8 @@ cd ../palette-phase1-leave-service
 - `services/leave-service/src/schemas/leave.ts`
 
 **인수 조건**:
-- [ ] 테스트 먼저 작성됨 (RED 확인)
-- [ ] 모든 테스트 통과 (GREEN)
+- [ ] 테스트 먼저 작성됨 (RED 확인: `pnpm --filter @palette/leave-service test` → FAILED)
+- [ ] 모든 테스트 통과 (GREEN: `pnpm --filter @palette/leave-service test` → PASSED)
 - [ ] 에러 코드 LV_001~005 모두 처리
 - [ ] Quality Gate 통과
 
@@ -270,6 +270,7 @@ cd ../palette-phase1-approval-service
 - `services/approval-service/src/schemas/approval.ts`
 
 **인수 조건**:
+- [ ] 테스트 먼저 작성됨 (RED 확인: `pnpm --filter @palette/approval-service test` → FAILED)
 - [ ] 에러 코드 AP_001~002 처리
 - [ ] 승인/반려/자동승인 상태 전이 정확
 - [ ] 감사 로그(audit_log) 기록

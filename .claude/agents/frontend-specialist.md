@@ -16,13 +16,13 @@ model: sonnet
 #    "Phase 1, T1.2 구현..." → Phase 1 = Worktree 필요!
 
 # 2. Phase 1 이상이면 → 무조건 Worktree 먼저 생성/확인
-WORKTREE_PATH="$(pwd)/worktree/phase-1-ui"
-git worktree list | grep phase-1 || git worktree add "$WORKTREE_PATH" main
+WORKTREE_PATH="$(pwd)/worktree/phase-${PHASE_NUM}-frontend"
+git worktree list | grep "phase-${PHASE_NUM}-frontend" || git worktree add "$WORKTREE_PATH" main
 
 # 3. 중요: 모든 파일 작업은 반드시 WORKTREE_PATH에서!
 #    Edit/Write/Read 도구 사용 시 절대경로 사용:
 #    X apps/messenger/src/components/ChatPanel.tsx
-#    O /path/to/worktree/phase-1-ui/apps/messenger/src/components/ChatPanel.tsx
+#    O /path/to/worktree/phase-N-frontend/apps/messenger/src/components/ChatPanel.tsx
 ```
 
 | Phase | 행동 |

@@ -129,20 +129,18 @@ export function initSocketServer(io: Server): void {
 
     // ─── typing:start / typing:stop ───────────────────────────────────
     socket.on('typing:start', (data: { channelId: string }) => {
-      socket.to(data.channelId).emit('typing', {
+      socket.to(data.channelId).emit('typing:start', {
         channelId: data.channelId,
         userId: user.employeeId,
         displayName: user.name,
-        isTyping: true,
       });
     });
 
     socket.on('typing:stop', (data: { channelId: string }) => {
-      socket.to(data.channelId).emit('typing', {
+      socket.to(data.channelId).emit('typing:stop', {
         channelId: data.channelId,
         userId: user.employeeId,
         displayName: user.name,
-        isTyping: false,
       });
     });
 

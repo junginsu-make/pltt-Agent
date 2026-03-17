@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: palette-postgres-test
+    environment:
+      POSTGRES_USER: palette_test
+      POSTGRES_PASSWORD: palette_test
+      POSTGRES_DB: palette_test
+    ports:
+      - '5433:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U palette_test -d palette_test']
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: palette-redis-test
+    ports:
+      - '6380:6379'
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 3s
+      timeout: 3s
+      retries: 5

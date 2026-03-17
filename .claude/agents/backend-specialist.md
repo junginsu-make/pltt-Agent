@@ -16,13 +16,13 @@ model: sonnet
 #    "Phase 1, T1.1 구현..." → Phase 1 = Worktree 필요!
 
 # 2. Phase 1 이상이면 → 무조건 Worktree 먼저 생성/확인
-WORKTREE_PATH="$(pwd)/worktree/phase-1-db"
-git worktree list | grep phase-1 || git worktree add "$WORKTREE_PATH" main
+WORKTREE_PATH="$(pwd)/worktree/phase-${PHASE_NUM}-backend"
+git worktree list | grep "phase-${PHASE_NUM}-backend" || git worktree add "$WORKTREE_PATH" main
 
 # 3. 중요: 모든 파일 작업은 반드시 WORKTREE_PATH에서!
 #    Edit/Write/Read 도구 사용 시 절대경로 사용:
 #    X services/leave-service/src/routes/leave.ts
-#    O /path/to/worktree/phase-1-db/services/leave-service/src/routes/leave.ts
+#    O /path/to/worktree/phase-N-backend/services/leave-service/src/routes/leave.ts
 ```
 
 | Phase | 행동 |

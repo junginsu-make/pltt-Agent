@@ -113,9 +113,9 @@ palette-platform/
 
 | 항목 | 상태 | 최종 업데이트 |
 |------|------|--------------|
-| **현재 버전** | v0.1.0 | 2026-03-16 |
-| **현재 Phase** | Phase 2 (셋업) | 2026-03-16 |
-| **다음 마일스톤** | Phase 3 AGENTS.md | 2026-03-16 |
+| **현재 버전** | v0.2.0 | 2026-03-18 |
+| **현재 Phase** | Phase 3 (거버넌스 + 보안 보강) | 2026-03-18 |
+| **다음 마일스톤** | Phase 4 태스크 실행 | 2026-03-18 |
 
 ### Phase 진행 현황
 
@@ -123,7 +123,7 @@ palette-platform/
 |-------|------|--------|--------|------|
 | Phase 1: 기획 | 완료 | 2026-03-16 | 2026-03-16 | Q1~Q21 + 6개 문서 |
 | Phase 2: 셋업 | 완료 | 2026-03-16 | 2026-03-16 | 스캐폴딩 + 에이전트 팀 |
-| Phase 3: AGENTS.md | 대기 | - | - | 거버넌스 규칙 |
+| Phase 3: AGENTS.md + 보안 보강 | 진행중 | 2026-03-18 | - | 거버넌스 규칙 + 보안 하드닝 |
 | Phase 4: 태스크 | 대기 | - | - | TASKS.md |
 | Phase 5: 개발 | 대기 | - | - | TDD 실행 |
 
@@ -144,6 +144,26 @@ palette-platform/
 ### Notes
 - 다음 작업: Phase 3 AGENTS.md 시스템 생성
 - 전체 파일 수: 74+
+
+## [2026-03-18] v0.2.0 - 문서 보완 + 보안 하드닝
+
+### Added
+- 하위 디렉토리 AGENTS.md 생성 (services/, apps/, packages/)
+- docker-compose.test.yml (테스트 전용 DB 환경)
+- Rate limiting 미들웨어 (전 서비스)
+
+### Fixed
+- JWT Secret 하드코딩 폴백 제거 (환경변수 필수화)
+- CORS origin '*' → 환경변수 기반 화이트리스트
+- ESLint 규칙 누락 (eqeqeq, no-eval) 추가
+- Socket 이벤트명 불일치 수정 (typing → typing:start/stop)
+- DB 테이블 수 문서 불일치 (12→13) 통일
+- 에이전트 Worktree 경로 충돌 위험 해소
+
+### Changed
+- 06-tasks.md Quality Gate에 RED 테스트 검증 단계 추가
+- .env.example 포트 변수 주석 해제
+- Vitest coverage threshold 80% 설정
 
 ---
 

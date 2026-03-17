@@ -87,7 +87,7 @@ palette-platform/
 | 문서 | 내용 | 참조 시점 |
 |------|------|----------|
 | docs/ARCHITECTURE.md | 4개 레이어, 메시지 라우팅, 채널 구조, Human Takeover | 항상 |
-| docs/DATABASE.md | 12개 테이블 DDL + seed SQL | Step 1 |
+| docs/DATABASE.md | 13개 테이블 DDL + seed SQL | Step 1 |
 | docs/API.md | 전체 REST API Request/Response | Step 1~3 |
 | docs/LLM.md | System Prompt, Tool 정의, 파이프라인 코드 | Step 3 |
 | docs/FRONTEND.md | 컴포넌트 트리, Socket.IO 이벤트, 상태 관리 | Step 4~5 |

@@ -97,9 +97,6 @@ CLAUDE.md의 Lessons Learned에 난관 극복 교훈을 기록하세요.
 
 ## Context Map
 
-- **[Messaging Server (WebSocket Hub)](./services/messaging-server/AGENTS.md)** -- Socket.IO 서버, 메시지 라우팅, Human Takeover 구현 시
-- **[AI Runtime (LLM Pipeline)](./services/ai-runtime/AGENTS.md)** -- LLM Adapter, Tool Executor, System Prompt 관리 시
-- **[Leave Service (HR API)](./services/leave-service/AGENTS.md)** -- 휴가 CRUD, 연차 계산, 날짜 검증 로직 시
-- **[Approval Service (Workflow)](./services/approval-service/AGENTS.md)** -- 결재 워크플로우, 자동승인, 상태 전이 시
-- **[Messenger UI (Frontend)](./apps/messenger/AGENTS.md)** -- 메신저 UI, Socket.IO 클라이언트, Zustand 상태 관리 시
-- **[Database Schema (Drizzle)](./packages/db/AGENTS.md)** -- Drizzle 스키마, 마이그레이션, seed 데이터 작업 시
+- **[Backend Services](./services/AGENTS.md)** -- 서비스 간 통신 규칙, 포트 관리, DB 소유권, Rate Limiting
+- **[Frontend Apps](./apps/AGENTS.md)** -- 프론트엔드 공통 규칙, 컴포넌트 패턴, Socket.IO 이벤트
+- **[Shared Packages](./packages/AGENTS.md)** -- 공유 패키지 변경 규칙, 타입 동기화, 스키마 관리

@@ -1,10 +1,29 @@
 import { db, employees } from '@palette/db';
 import { eq } from 'drizzle-orm';
+import { z } from 'zod';
 
-const LEAVE_SERVICE_URL = process.env.LEAVE_SERVICE_URL || 'http://localhost:3001/api/v1';
-const APPROVAL_SERVICE_URL = process.env.APPROVAL_SERVICE_URL || 'http://localhost:3002/api/v1';
-const MESSAGING_SERVICE_URL = process.env.MESSAGING_SERVICE_URL || 'http://localhost:3000/api/v1';
-const AI_RUNTIME_URL = process.env.AI_RUNTIME_URL || 'http://localhost:3100/api/v1';
+const toolInputSchemas: Record<string, z.ZodType> = {
+  query_leave_balance: z.object({ employee_id: z.string().min(1) }),
+  validate_date: z.object({ start_date: z.string(), end_date: z.string().optional(), employee_id: z.string().optional() }),
+  submit_leave_request: z.object({ employee_id: z.string(), start_date: z.string(), end_date: z.string(), leave_type: z.string().optional(), reason: z.string().optional() }),
+  approve_request: z.object({ approval_id: z.string(), comment: z.string().optional() }),
+  reject_request: z.object({ approval_id: z.string(), comment: z.string() }),
+  call_person: z.object({ callee_id: z.string() }),
+  delegate_to_agent: z.object({ target_user_id: z.string(), task_message: z.string(), context: z.string().optional() }),
+  invite_agent_to_channel: z.object({ target_user_id: z.string(), channel_id: z.string() }),
+  broadcast_to_team: z.object({ team_id: z.string(), message: z.string() }),
+};
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} environment variable is required`);
+  return value;
+}
+
+const LEAVE_SERVICE_URL = requireEnv('LEAVE_SERVICE_URL');
+const APPROVAL_SERVICE_URL = requireEnv('APPROVAL_SERVICE_URL');
+const MESSAGING_SERVICE_URL = requireEnv('MESSAGING_SERVICE_URL');
+const AI_RUNTIME_URL = requireEnv('AI_RUNTIME_URL');
 
 const DELEGATION_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_DEPTH = 3;
@@ -29,6 +48,15 @@ export async function executeTool(
   _senderUserId: string,
   delegationCtx?: DelegationContext,
 ): Promise<ToolResult> {
+  // Validate input if schema exists
+  const schema = toolInputSchemas[toolName];
+  if (schema) {
+    const parsed = schema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: `Invalid tool input: ${parsed.error.issues.map(i => i.message).join(', ')}` };
+    }
+  }
+
   try {
     switch (toolName) {
       case 'query_leave_balance':
