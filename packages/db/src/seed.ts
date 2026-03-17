@@ -2,7 +2,7 @@
 
 import { hashSync } from 'bcryptjs';
 import { eq } from 'drizzle-orm';
-import { db } from './index.js';
+import { db } from './index';
 import {
   teams,
   employees,
@@ -11,7 +11,7 @@ import {
   leaveBalances,
   holidays,
   channels,
-} from './schema/index.js';
+} from './schema/index';
 
 const PASSWORD_HASH = hashSync('password123', 10);
 
@@ -323,6 +323,28 @@ async function main() {
       type: 'team',
       name: '개발팀',
       participants: ['EMP-DEV-LEADER', 'EMP-001'],
+    },
+    // Work channels (AI-connected, one per employee for AI interactions)
+    {
+      id: 'ch-work-EMP-001',
+      type: 'work',
+      name: '정인수 업무',
+      participants: ['EMP-001'],
+      assignedLlm: 'palette-ai',
+    },
+    {
+      id: 'ch-work-EMP-CEO',
+      type: 'work',
+      name: '대표 업무',
+      participants: ['EMP-CEO'],
+      assignedLlm: 'palette-ai',
+    },
+    {
+      id: 'ch-work-EMP-HR-001',
+      type: 'work',
+      name: '휴가 담당자 업무',
+      participants: ['EMP-HR-001'],
+      assignedLlm: 'palette-ai',
     },
     // Notification channels (one per employee)
     {

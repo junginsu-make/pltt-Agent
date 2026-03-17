@@ -48,7 +48,7 @@ class ChatPage {
     await this.page.locator(SELECTORS.MESSAGE_INPUT).waitFor({ state: 'visible' });
   }
 
-  /** Type a message and send it */
+  /** Type a message and send it (via WebSocket, not REST) */
   async sendMessage(text: string): Promise<void> {
     const input = this.page.locator(SELECTORS.MESSAGE_INPUT);
     await input.fill(text);
@@ -56,11 +56,13 @@ class ChatPage {
     const sendButton = this.page.locator(SELECTORS.SEND_BUTTON);
     await sendButton.click();
 
-    // Wait for the API to acknowledge the message
-    await this.page.waitForResponse(
-      (resp) => resp.url().includes(API_ROUTES.SEND_MESSAGE) && resp.status() === 200,
-      { timeout: TIMEOUTS.MESSAGE_DELIVERY },
-    );
+    // Wait for the sent message to appear in the chat (delivered via WebSocket)
+    const messageList = this.page.locator(SELECTORS.MESSAGE_LIST);
+    await messageList
+      .locator(SELECTORS.TEXT_BUBBLE)
+      .filter({ hasText: text })
+      .last()
+      .waitFor({ state: 'visible', timeout: TIMEOUTS.MESSAGE_DELIVERY });
   }
 
   /** Wait for an AI text response containing the expected substring */
@@ -176,7 +178,7 @@ test.describe.serial('Scenario A: 직원 휴가 신청 → 승인', () => {
     await loginAs(employeePage, USERS.EMPLOYEE_A.email, USERS.EMPLOYEE_A.password);
 
     // Verify we are on the channels page after login
-    await expect(employeePage).toHaveURL(/\/channels\//);
+    await expect(employeePage).toHaveURL(/\/channels/);
 
     // Verify sidebar is visible
     await employeePage.locator(SELECTORS.SIDEBAR).waitFor({
@@ -248,7 +250,7 @@ test.describe.serial('Scenario A: 직원 휴가 신청 → 승인', () => {
     await loginAs(managerPage, USERS.MANAGER.email, USERS.MANAGER.password);
 
     // Verify login success
-    await expect(managerPage).toHaveURL(/\/channels\//);
+    await expect(managerPage).toHaveURL(/\/channels/);
 
     // Wait for sidebar to load
     await managerPage.locator(SELECTORS.SIDEBAR).waitFor({

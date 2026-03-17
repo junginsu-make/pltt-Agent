@@ -22,7 +22,7 @@ function requireEnv(name: string): string {
 
 const LEAVE_SERVICE_URL = requireEnv('LEAVE_SERVICE_URL');
 const APPROVAL_SERVICE_URL = requireEnv('APPROVAL_SERVICE_URL');
-const MESSAGING_SERVICE_URL = requireEnv('MESSAGING_SERVICE_URL');
+const MESSAGING_SERVICE_URL = requireEnv('MESSAGING_SERVER_URL');
 const AI_RUNTIME_URL = requireEnv('AI_RUNTIME_URL');
 
 const DELEGATION_TIMEOUT_MS = 10_000;

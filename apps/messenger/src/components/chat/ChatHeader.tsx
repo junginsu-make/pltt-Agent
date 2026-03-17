@@ -42,7 +42,7 @@ export default function ChatHeader({ channel }: ChatHeaderProps) {
   const participantCount = channel.participants?.length || 0;
 
   return (
-    <div className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
+    <div data-testid="chat-header" className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6">
       <div className="flex items-center gap-3">
         <h2 className="text-base font-bold text-gray-900">{channel.name}</h2>
         {participantCount > 0 && (
@@ -57,7 +57,7 @@ export default function ChatHeader({ channel }: ChatHeaderProps) {
           </span>
         )}
         {channel.humanTakeover && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-600">
+          <span data-testid="direct-response-badge" className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-600">
             <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
             직접 응답 모드
           </span>
@@ -75,7 +75,7 @@ export default function ChatHeader({ channel }: ChatHeaderProps) {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            {channel.humanTakeover ? 'AI에게 넘기기' : '직접 개입'}
+            {channel.humanTakeover ? (<span data-testid="release-button">AI에게 넘기기</span>) : (<span data-testid="takeover-button">직접 개입</span>)}
           </button>
         )}
       </div>

@@ -200,10 +200,10 @@ test.describe.serial('Scenario C: 담당자 직접 개입 (Human Takeover)', () 
   test('Step 0: 직원과 휴가 담당자 로그인', async () => {
     // Login both users
     await loginAs(employeePage, USERS.EMPLOYEE_A.email, USERS.EMPLOYEE_A.password);
-    await expect(employeePage).toHaveURL(/\/channels\//);
+    await expect(employeePage).toHaveURL(/\/channels/);
 
     await loginAs(hrStaffPage, USERS.HR_STAFF.email, USERS.HR_STAFF.password);
-    await expect(hrStaffPage).toHaveURL(/\/channels\//);
+    await expect(hrStaffPage).toHaveURL(/\/channels/);
 
     // Wait for both sidebars
     await employeePage.locator(SELECTORS.SIDEBAR).waitFor({

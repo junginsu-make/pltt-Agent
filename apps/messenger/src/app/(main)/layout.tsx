@@ -47,7 +47,7 @@ export default function MainLayout({
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <aside className="flex w-72 flex-shrink-0 flex-col border-r border-gray-200 bg-white">
+      <aside data-testid="sidebar" className="flex w-72 flex-shrink-0 flex-col border-r border-gray-200 bg-white">
         {/* User profile header */}
         <div className="flex h-16 items-center justify-between border-b border-gray-100 px-4">
           <div className="flex items-center gap-3">

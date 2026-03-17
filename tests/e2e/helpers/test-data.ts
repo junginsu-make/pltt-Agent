@@ -108,8 +108,8 @@ export const SELECTORS = {
   DIRECT_RESPONSE_BADGE: '[data-testid="direct-response-badge"]',
 
   // Auth
-  LOGIN_EMAIL: '[name=email]',
-  LOGIN_PASSWORD: '[name=password]',
+  LOGIN_EMAIL: '#email',
+  LOGIN_PASSWORD: '#password',
   LOGIN_SUBMIT: 'button[type=submit]',
 
   // AI badge

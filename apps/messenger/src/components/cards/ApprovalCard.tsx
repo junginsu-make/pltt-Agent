@@ -32,7 +32,7 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
   };
 
   return (
-    <div className="w-80 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div data-testid="approval-card" className="w-80 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
       <h3 className="mb-3 text-sm font-semibold text-gray-900">
         휴가 승인 요청
       </h3>
@@ -99,6 +99,7 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
       {!decided ? (
         <div className="flex gap-2">
           <button
+            data-testid="approve-button"
             onClick={() => handleDecide('approve')}
             disabled={isSubmitting}
             className="flex-1 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-600 disabled:opacity-50"
@@ -106,6 +107,7 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
             승인
           </button>
           <button
+            data-testid="reject-button"
             onClick={() => handleDecide('reject')}
             disabled={isSubmitting}
             className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"

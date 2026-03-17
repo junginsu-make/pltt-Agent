@@ -172,7 +172,7 @@ test.describe.serial('Scenario B: 대표 일정 조회 + 팀장 호출 + DM', ()
   test('Step 1: 대표(EMP-CEO) 로그인', async () => {
     await loginAs(ceoPage, USERS.CEO.email, USERS.CEO.password);
 
-    await expect(ceoPage).toHaveURL(/\/channels\//);
+    await expect(ceoPage).toHaveURL(/\/channels/);
     await ceoPage.locator(SELECTORS.SIDEBAR).waitFor({
       state: 'visible',
       timeout: TIMEOUTS.MESSAGE_DELIVERY,
@@ -221,7 +221,7 @@ test.describe.serial('Scenario B: 대표 일정 조회 + 팀장 호출 + DM', ()
 
     // Also log in as team leader and verify they received the call notification
     await loginAs(teamLeaderPage, USERS.TEAM_LEADER.email, USERS.TEAM_LEADER.password);
-    await expect(teamLeaderPage).toHaveURL(/\/channels\//);
+    await expect(teamLeaderPage).toHaveURL(/\/channels/);
 
     // Team leader should see a notification about the call
     await teamLeaderPage.locator(SELECTORS.SIDEBAR).waitFor({

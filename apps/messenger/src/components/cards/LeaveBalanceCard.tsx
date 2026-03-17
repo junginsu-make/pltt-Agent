@@ -13,7 +13,7 @@ export default function LeaveBalanceCard({ data }: LeaveBalanceCardProps) {
   const expiryDate = data.expiryDate as string | undefined;
 
   return (
-    <div className="w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div data-testid="leave-balance-card" className="w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
       <h3 className="mb-3 text-sm font-semibold text-gray-900">
         연차 현황
       </h3>

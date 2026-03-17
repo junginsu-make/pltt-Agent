@@ -19,7 +19,7 @@ export default function TypingIndicator({ users }: TypingIndicatorProps) {
   }
 
   return (
-    <div className="px-4 py-2">
+    <div data-testid="typing-indicator" className="px-4 py-2">
       <div className="flex items-center gap-2">
         <div className="flex gap-0.5">
           <span className="typing-dot inline-block h-1.5 w-1.5 rounded-full bg-gray-400" />

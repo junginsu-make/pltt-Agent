@@ -83,9 +83,9 @@ export default function ChannelList() {
   };
 
   return (
-    <div className="scrollbar-thin flex-1 overflow-y-auto">
+    <div data-testid="channel-list" className="scrollbar-thin flex-1 overflow-y-auto">
       {Object.entries(grouped).map(([type, chans]) => (
-        <div key={type} className="py-1">
+        <div key={type} data-testid={`channel-group-${type === 'direct' ? 'dm' : type}`} className="py-1">
           <div className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
             <ChannelTypeIcon type={type} />
             {CHANNEL_TYPE_LABELS[type] || type}
@@ -95,6 +95,7 @@ export default function ChannelList() {
             return (
               <button
                 key={channel.id}
+                data-testid="channel-item"
                 onClick={() => handleClick(channel.id)}
                 className={`flex w-full items-center gap-3 px-4 py-2 text-left transition-all ${
                   isActive
