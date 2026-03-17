@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { rateLimiter } from '@palette/shared/middleware/rate-limiter.js';
+import { errorHandler } from '@palette/shared/middleware/error-handler.js';
 import authRoutes from './routes/auth.js';
 import messengerRoutes from './routes/messenger.js';
 import { authMiddleware } from './middleware/auth.js';
@@ -22,5 +23,7 @@ app.route('/api/v1/auth', authRoutes);
 // Messenger routes (with auth)
 app.use('/api/v1/messenger/*', authMiddleware);
 app.route('/api/v1/messenger', messengerRoutes);
+
+app.onError(errorHandler);
 
 export default app;
