@@ -113,9 +113,9 @@ palette-platform/
 
 | 항목 | 상태 | 최종 업데이트 |
 |------|------|--------------|
-| **현재 버전** | v0.2.0 | 2026-03-18 |
-| **현재 Phase** | Phase 3 (거버넌스 + 보안 보강) | 2026-03-18 |
-| **다음 마일스톤** | Phase 4 태스크 실행 | 2026-03-18 |
+| **현재 버전** | v0.3.0 | 2026-03-18 |
+| **현재 Phase** | Phase 5 (Admin + 통합) | 2026-03-18 |
+| **다음 마일스톤** | T5.2 E2E 시나리오 테스트 | 2026-03-18 |
 
 ### Phase 진행 현황
 
@@ -123,9 +123,9 @@ palette-platform/
 |-------|------|--------|--------|------|
 | Phase 1: 기획 | 완료 | 2026-03-16 | 2026-03-16 | Q1~Q21 + 6개 문서 |
 | Phase 2: 셋업 | 완료 | 2026-03-16 | 2026-03-16 | 스캐폴딩 + 에이전트 팀 |
-| Phase 3: AGENTS.md + 보안 보강 | 진행중 | 2026-03-18 | - | 거버넌스 규칙 + 보안 하드닝 |
-| Phase 4: 태스크 | 대기 | - | - | TASKS.md |
-| Phase 5: 개발 | 대기 | - | - | TDD 실행 |
+| Phase 3: AGENTS.md + 보안 보강 | 완료 | 2026-03-18 | 2026-03-18 | 거버넌스 규칙 + 보안 하드닝 |
+| Phase 4: 인프라 구축 | 완료 | 2026-03-18 | 2026-03-18 | notification, scheduler, error handler |
+| Phase 5: Admin + 통합 | 진행중 | 2026-03-18 | - | T5.1 완료, T5.2/T5.3 대기 |
 
 ### 업데이트 로그
 
@@ -144,6 +144,16 @@ palette-platform/
 ### Notes
 - 다음 작업: Phase 3 AGENTS.md 시스템 생성
 - 전체 파일 수: 74+
+
+## [2026-03-18] v0.3.0 - Admin 완성 (T5.1) + 인프라 구축
+
+### Added
+- T5.1 Admin 완성: Leave Policy 편집 폼, Dashboard 최근 섹션, Teams CRUD
+- notification-service 구현 (알림 CRUD, in-memory MVP)
+- scheduler 구현 (auto-approval 5분, leave-accrual 월별)
+- 통합 에러 핸들러 (packages/shared)
+- Playwright E2E 설정 + smoke test
+- 15개 새 Admin 테스트 (TDD RED→GREEN)
 
 ## [2026-03-18] v0.2.0 - 문서 보완 + 보안 하드닝
 
