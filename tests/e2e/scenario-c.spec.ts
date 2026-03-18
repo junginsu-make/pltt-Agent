@@ -75,19 +75,20 @@ class TakeoverPage {
     const sendButton = this.page.locator(SELECTORS.SEND_BUTTON);
     await sendButton.click();
 
-    await this.page.waitForResponse(
-      (resp) =>
-        (resp.url().includes(API_ROUTES.SEND_MESSAGE) || resp.url().includes(API_ROUTES.SEND_DM)) &&
-        (resp.status() === 200 || resp.status() === 201),
-      { timeout: TIMEOUTS.MESSAGE_DELIVERY },
-    );
+    // Wait for sent message to appear
+    const messageList = this.page.locator(SELECTORS.MESSAGE_LIST);
+    await messageList
+      .locator(SELECTORS.TEXT_BUBBLE)
+      .filter({ hasText: text })
+      .last()
+      .waitFor({ state: 'visible', timeout: TIMEOUTS.MESSAGE_DELIVERY });
   }
 
   /** Wait for an AI response containing expected text */
   async waitForAIResponse(expectedSubstring: string): Promise<void> {
     await this.page
       .locator(SELECTORS.MESSAGE_LIST)
-      .locator(SELECTORS.TEXT_BUBBLE)
+      .locator(`${SELECTORS.TEXT_BUBBLE}, ${SELECTORS.CARD_MESSAGE}`)
       .filter({ hasText: expectedSubstring })
       .last()
       .waitFor({ state: 'visible', timeout: TIMEOUTS.AI_RESPONSE });

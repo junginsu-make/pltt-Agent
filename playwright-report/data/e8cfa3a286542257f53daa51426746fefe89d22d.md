@@ -1,0 +1,82 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: 대
+          - generic [ref=e8]:
+            - generic [ref=e9]: 대표
+            - generic [ref=e10]: 대표이사
+        - button "로그아웃" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - img [ref=e17]
+            - text: 알림
+          - button "대 대표 알림" [ref=e19] [cursor=pointer]:
+            - generic [ref=e20]: 대
+            - generic [ref=e23]: 대표 알림
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - img [ref=e26]
+            - text: 업무
+          - button "대 대표 업무" [ref=e28] [cursor=pointer]:
+            - generic [ref=e29]: 대
+            - generic [ref=e32]: 대표 업무
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - img [ref=e35]
+            - text: 전사
+          - button "전 전사 공지" [ref=e37] [cursor=pointer]:
+            - generic [ref=e38]: 전
+            - generic [ref=e41]: 전사 공지
+    - main [ref=e42]:
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - heading "대표 업무" [level=2] [ref=e46]
+            - generic [ref=e47]: "1"
+          - button "직접 개입" [ref=e49] [cursor=pointer]
+        - generic [ref=e51]:
+          - generic [ref=e55]: 2026년 3월 18일 수요일
+          - generic [ref=e57]:
+            - generic [ref=e59]:
+              - generic [ref=e60]: 오후 02:32
+              - generic [ref=e61]: 직원 A 일정에 대해서 알려줘
+            - generic [ref=e63]:
+              - generic [ref=e64]: 오후 02:32
+              - generic [ref=e65]: 직원 A 일정에 대해서 알려줘
+            - generic [ref=e67]:
+              - generic [ref=e68]: 오후 02:32
+              - generic [ref=e69]: 경영지원팀장 호출해줘
+            - generic [ref=e71]:
+              - generic [ref=e72]: 오후 02:32
+              - generic [ref=e73]: 경영지원팀장 호출해줘
+            - generic [ref=e74]:
+              - generic [ref=e75]: AI
+              - generic [ref=e76]:
+                - generic [ref=e77]:
+                  - generic [ref=e78]: AI 어시스턴트
+                  - generic [ref=e79]: AI
+                  - generic [ref=e80]: 자동
+                - generic [ref=e81]: CEO님께 위임이 완료되었습니다! 직원 A의 구체적인 일정을 조회하려면 **직원 ID** 정보가 필요합니다. 혹시 다음 중 필요하신 것이 있으신가요? - 👤 **특정 직원의 연차 잔여일** 조회 - 📅 **특정 날짜의 휴가 신청** - 📋 **연차 규정** 안내 위 사항이라면 제가 바로 도와드리겠습니다! 😊
+                - generic [ref=e82]: 오후 02:32
+            - generic [ref=e83]:
+              - generic [ref=e84]: AI
+              - generic [ref=e85]:
+                - generic [ref=e86]:
+                  - generic [ref=e87]: AI 어시스턴트
+                  - generic [ref=e88]: AI
+                  - generic [ref=e89]: 자동
+                - generic [ref=e90]: CEO님께 위임이 완료되었습니다! 직원 A의 구체적인 일정을 조회하려면 **직원 ID** 정보가 필요합니다. 혹시 다음 중 필요하신 것이 있으신가요? - 👤 **특정 직원의 연차 잔여일** 조회 - 📅 **특정 날짜의 휴가 신청** - 📋 **연차 규정** 안내 위 사항이라면 제가 바로 도와드리겠습니다! 😊
+                - generic [ref=e91]: 오후 02:32
+        - generic [ref=e93]:
+          - textbox "메시지를 입력하세요... (Enter로 전송)" [ref=e95]
+          - button [disabled] [ref=e96]:
+            - img [ref=e97]
+```

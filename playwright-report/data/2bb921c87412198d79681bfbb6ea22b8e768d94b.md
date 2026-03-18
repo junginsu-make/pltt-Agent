@@ -1,0 +1,51 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: 정
+          - generic [ref=e8]:
+            - generic [ref=e9]: 정인수
+            - generic [ref=e10]: 프론트엔드 개발자
+        - button "로그아웃" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - img [ref=e17]
+            - text: 알림
+          - button "정 정인수 알림" [ref=e19] [cursor=pointer]:
+            - generic [ref=e20]: 정
+            - generic [ref=e23]: 정인수 알림
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - img [ref=e26]
+            - text: 업무
+          - button "정 정인수 업무" [ref=e28] [cursor=pointer]:
+            - generic [ref=e29]: 정
+            - generic [ref=e32]: 정인수 업무
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - img [ref=e35]
+            - text: 팀
+          - button "개 개발팀" [ref=e37] [cursor=pointer]:
+            - generic [ref=e38]: 개
+            - generic [ref=e41]: 개발팀
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - img [ref=e44]
+            - text: 전사
+          - button "전 전사 공지" [ref=e46] [cursor=pointer]:
+            - generic [ref=e47]: 전
+            - generic [ref=e50]: 전사 공지
+    - main [ref=e51]:
+      - generic [ref=e53]:
+        - img [ref=e55]
+        - heading "Palette AI Messenger" [level=2] [ref=e57]
+        - paragraph [ref=e58]: 좌측에서 채널을 선택하여 대화를 시작하세요
+        - paragraph [ref=e59]: AI 비서가 업무를 도와드립니다
+```
