@@ -4,6 +4,70 @@ import type { JwtPayload } from '../lib/jwt.js';
 import * as channelService from '../services/channel-service.js';
 import * as messageService from '../services/message-service.js';
 import { routeMessage } from '../router.js';
+import { createServiceToken } from '@palette/shared/middleware/service-auth';
+
+function getAiRuntimeUrl(): string {
+  return process.env.AI_RUNTIME_URL ?? 'http://localhost:3100/api/v1';
+}
+
+async function callAiRuntime(
+  io: Server,
+  channelId: string,
+  llmUserId: string,
+  userMessage: string,
+  senderUserId: string,
+): Promise<void> {
+  try {
+    const token = createServiceToken('messaging-server');
+    const res = await fetch(`${getAiRuntimeUrl()}/runtime/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        llm_user_id: llmUserId,
+        channel_id: channelId,
+        user_message: userMessage,
+        sender_user_id: senderUserId,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(`[socket] AI runtime error: ${res.status}`);
+      return;
+    }
+
+    const result = await res.json() as {
+      text?: string;
+      card_data?: Record<string, unknown> | null;
+      tool_calls?: unknown[];
+      tool_results?: unknown[];
+    };
+
+    // Save AI response as message
+    const aiMessage = await messageService.saveMessage({
+      channelId,
+      senderType: 'llm',
+      senderUserId: llmUserId,
+      displayName: 'AI 어시스턴트',
+      contentType: result.card_data ? 'card' : 'text',
+      contentText: result.text ?? '',
+      cardData: result.card_data ?? undefined,
+      toolCalls: result.tool_calls ?? [],
+      toolResults: result.tool_results ?? [],
+      isLlmAuto: true,
+    });
+
+    // Broadcast AI response to channel
+    io.to(channelId).emit('message:new', {
+      channelId,
+      message: aiMessage,
+    });
+  } catch (err) {
+    console.error('[socket] AI runtime call failed:', err);
+  }
+}
 
 // Extend Socket type with authenticated user data
 interface AuthenticatedSocket extends Socket {
@@ -108,6 +172,11 @@ export function initSocketServer(io: Server): void {
             routedToLlm: routing.llmUserId,
           },
         });
+
+        // If LLM response is needed, call ai-runtime asynchronously
+        if (routing.llmRequired && routing.llmUserId) {
+          callAiRuntime(io, data.channelId, routing.llmUserId, data.content, user.employeeId);
+        }
       } catch (err) {
         console.error('[socket] message:send error:', err);
         callback?.({ error: 'Failed to send message' });

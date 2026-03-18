@@ -121,9 +121,17 @@ export class LLMPipeline {
     // 7. Check for card_data in tool results (for structured UI cards)
     let cardData: Record<string, unknown> | undefined;
     for (const tr of allToolResults) {
-      const data = tr.result as Record<string, unknown>;
-      if (data && typeof data === 'object' && 'type' in data) {
-        cardData = data;
+      const raw = tr.result as Record<string, unknown>;
+      if (!raw || typeof raw !== 'object') continue;
+      // Direct type field (e.g. { type: 'leave_balance', ... })
+      if ('type' in raw) {
+        cardData = raw;
+        break;
+      }
+      // Nested in data wrapper (e.g. { data: { type: 'leave_balance', ... } })
+      const nested = raw.data as Record<string, unknown> | undefined;
+      if (nested && typeof nested === 'object' && 'type' in nested) {
+        cardData = nested;
         break;
       }
     }
