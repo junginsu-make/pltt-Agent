@@ -57,7 +57,7 @@ leave.post('/request', async (c) => {
     reason: body.reason,
     conversation_id: body.conversation_id,
   });
-  return c.json({ data: result }, 201);
+  return c.json({ data: { type: 'leave_request_confirmation', ...result } }, 201);
 });
 
 // DELETE /request/:id

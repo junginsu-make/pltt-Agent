@@ -3,6 +3,7 @@
 import { ChatMessage, useChatStore } from '@/stores/chat-store';
 import { useAuthStore } from '@/stores/auth-store';
 import LeaveBalanceCard from '@/components/cards/LeaveBalanceCard';
+import LeaveRequestCard from '@/components/cards/LeaveRequestCard';
 import ApprovalCard from '@/components/cards/ApprovalCard';
 
 interface MessageBubbleProps {
@@ -38,6 +39,9 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
       const cardType = message.cardData.type as string | undefined;
       if (cardType === 'leave_balance') {
         return <LeaveBalanceCard data={message.cardData} />;
+      }
+      if (cardType === 'leave_request_confirmation') {
+        return <LeaveRequestCard data={message.cardData} />;
       }
     }
     if (message.contentType === 'approval' && message.cardData) {
@@ -92,7 +96,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
               </span>
             )}
           </div>
-          <div data-testid="text-bubble" className="rounded-2xl rounded-tl-md border border-purple-100 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-gray-800 shadow-sm">
+          <div data-testid={cardContent ? 'card-message' : 'text-bubble'} className="rounded-2xl rounded-tl-md border border-purple-100 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-gray-800 shadow-sm">
             {cardContent || message.contentText}
           </div>
           <span className="mt-0.5 block text-[10px] text-gray-400">
