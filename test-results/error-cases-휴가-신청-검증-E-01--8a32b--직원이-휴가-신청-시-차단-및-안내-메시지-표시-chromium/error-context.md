@@ -1,0 +1,201 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: 정
+          - generic [ref=e8]:
+            - generic [ref=e9]: 정인수
+            - generic [ref=e10]: 프론트엔드 개발자
+        - button "로그아웃" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - img [ref=e17]
+            - text: 알림
+          - button "정 정인수 알림" [ref=e19] [cursor=pointer]:
+            - generic [ref=e20]: 정
+            - generic [ref=e23]: 정인수 알림
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - img [ref=e26]
+            - text: 업무
+          - button "정 정인수 업무" [ref=e28] [cursor=pointer]:
+            - generic [ref=e29]: 정
+            - generic [ref=e32]: 정인수 업무
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - img [ref=e35]
+            - text: 팀
+          - button "개 개발팀" [ref=e37] [cursor=pointer]:
+            - generic [ref=e38]: 개
+            - generic [ref=e41]: 개발팀
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - img [ref=e44]
+            - text: 전사
+          - button "전 전사 공지" [ref=e46] [cursor=pointer]:
+            - generic [ref=e47]: 전
+            - generic [ref=e50]: 전사 공지
+    - main [ref=e51]:
+      - generic [ref=e52]:
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - heading "정인수 업무" [level=2] [ref=e55]
+            - generic [ref=e56]: "1"
+          - button "직접 개입" [ref=e58] [cursor=pointer]
+        - generic [ref=e60]:
+          - generic [ref=e64]: 2026년 3월 18일 수요일
+          - generic [ref=e66]:
+            - generic [ref=e68]:
+              - generic [ref=e69]: 오후 02:32
+              - generic [ref=e70]: 휴가 쓰고 싶어
+            - generic [ref=e72]:
+              - generic [ref=e73]: 오후 02:32
+              - generic [ref=e74]: 휴가 쓰고 싶어
+            - generic [ref=e76]:
+              - generic [ref=e77]: 오후 02:32
+              - generic [ref=e78]: 나 다음주에 3일 연속 휴가 쓸 수 있어?
+            - generic [ref=e80]:
+              - generic [ref=e81]: 오후 02:32
+              - generic [ref=e82]: 나 다음주에 3일 연속 휴가 쓸 수 있어?
+            - generic [ref=e84]:
+              - generic [ref=e85]: 오후 02:32
+              - generic [ref=e86]: 아까 휴가 취소할래
+            - generic [ref=e88]:
+              - generic [ref=e89]: 오후 02:32
+              - generic [ref=e90]: 아까 휴가 취소할래
+            - generic [ref=e92]:
+              - generic [ref=e93]: 오후 02:32
+              - generic [ref=e94]: 나 휴가 몇개 남았어?
+            - generic [ref=e96]:
+              - generic [ref=e97]: 오후 02:32
+              - generic [ref=e98]: 나 휴가 몇개 남았어?
+            - generic [ref=e99]:
+              - generic [ref=e100]: AI
+              - generic [ref=e101]:
+                - generic [ref=e102]:
+                  - generic [ref=e103]: AI 어시스턴트
+                  - generic [ref=e104]: AI
+                  - generic [ref=e105]: 자동
+                - generic [ref=e106]: "안녕하세요! 휴가 신청을 도와드리겠습니다. 😊 다음주 3일 연속 휴가를 계획하고 계시네요! 먼저 두 가지 정보가 필요합니다: 1. **구체적인 날짜**: 다음주 중 정확히 어느 날부터 어느 날까지 휴가를 원하시나요? (예: 3월 24일~26일) 2. **휴가 사유**: 휴가 신청 시 사유를 알려주세요. 날짜를 말씀해주시면 바로 확인해드리겠습니다! 🗓️"
+                - generic [ref=e107]: 오후 02:32
+            - generic [ref=e108]:
+              - generic [ref=e109]: AI
+              - generic [ref=e110]:
+                - generic [ref=e111]:
+                  - generic [ref=e112]: AI 어시스턴트
+                  - generic [ref=e113]: AI
+                  - generic [ref=e114]: 자동
+                - generic [ref=e115]: "안녕하세요! 휴가 신청을 도와드리겠습니다. 😊 다음주 3일 연속 휴가를 계획하고 계시네요! 먼저 두 가지 정보가 필요합니다: 1. **구체적인 날짜**: 다음주 중 정확히 어느 날부터 어느 날까지 휴가를 원하시나요? (예: 3월 24일~26일) 2. **휴가 사유**: 휴가 신청 시 사유를 알려주세요. 날짜를 말씀해주시면 바로 확인해드리겠습니다! 🗓️"
+                - generic [ref=e116]: 오후 02:32
+            - generic [ref=e117]:
+              - generic [ref=e118]: AI
+              - generic [ref=e119]:
+                - generic [ref=e120]:
+                  - generic [ref=e121]: AI 어시스턴트
+                  - generic [ref=e122]: AI
+                  - generic [ref=e123]: 자동
+                - generic [ref=e125]:
+                  - heading "연차 현황" [level=3] [ref=e126]
+                  - generic [ref=e127]:
+                    - generic [ref=e128]:
+                      - generic [ref=e129]: "15"
+                      - generic [ref=e130]: 총 연차
+                    - generic [ref=e131]:
+                      - generic [ref=e132]: "11"
+                      - generic [ref=e133]: 잔여
+                    - generic [ref=e134]:
+                      - generic [ref=e135]: "1"
+                      - generic [ref=e136]: 사용
+                    - generic [ref=e137]:
+                      - generic [ref=e138]: "3"
+                      - generic [ref=e139]: 승인대기
+                  - generic [ref=e143]: 27% 사용
+                  - generic [ref=e144]: "만료일: 2027-03-01"
+                - generic [ref=e145]: 오후 02:32
+            - generic [ref=e146]:
+              - generic [ref=e147]: AI
+              - generic [ref=e148]:
+                - generic [ref=e149]:
+                  - generic [ref=e150]: AI 어시스턴트
+                  - generic [ref=e151]: AI
+                  - generic [ref=e152]: 자동
+                - generic [ref=e154]:
+                  - heading "연차 현황" [level=3] [ref=e155]
+                  - generic [ref=e156]:
+                    - generic [ref=e157]:
+                      - generic [ref=e158]: "15"
+                      - generic [ref=e159]: 총 연차
+                    - generic [ref=e160]:
+                      - generic [ref=e161]: "11"
+                      - generic [ref=e162]: 잔여
+                    - generic [ref=e163]:
+                      - generic [ref=e164]: "1"
+                      - generic [ref=e165]: 사용
+                    - generic [ref=e166]:
+                      - generic [ref=e167]: "3"
+                      - generic [ref=e168]: 승인대기
+                  - generic [ref=e172]: 27% 사용
+                  - generic [ref=e173]: "만료일: 2027-03-01"
+                - generic [ref=e174]: 오후 02:32
+            - generic [ref=e175]:
+              - generic [ref=e176]: AI
+              - generic [ref=e177]:
+                - generic [ref=e178]:
+                  - generic [ref=e179]: AI 어시스턴트
+                  - generic [ref=e180]: AI
+                  - generic [ref=e181]: 자동
+                - generic [ref=e183]:
+                  - heading "연차 현황" [level=3] [ref=e184]
+                  - generic [ref=e185]:
+                    - generic [ref=e186]:
+                      - generic [ref=e187]: "15"
+                      - generic [ref=e188]: 총 연차
+                    - generic [ref=e189]:
+                      - generic [ref=e190]: "11"
+                      - generic [ref=e191]: 잔여
+                    - generic [ref=e192]:
+                      - generic [ref=e193]: "1"
+                      - generic [ref=e194]: 사용
+                    - generic [ref=e195]:
+                      - generic [ref=e196]: "3"
+                      - generic [ref=e197]: 승인대기
+                  - generic [ref=e201]: 27% 사용
+                  - generic [ref=e202]: "만료일: 2027-03-01"
+                - generic [ref=e203]: 오후 02:32
+            - generic [ref=e204]:
+              - generic [ref=e205]: AI
+              - generic [ref=e206]:
+                - generic [ref=e207]:
+                  - generic [ref=e208]: AI 어시스턴트
+                  - generic [ref=e209]: AI
+                  - generic [ref=e210]: 자동
+                - generic [ref=e212]:
+                  - heading "연차 현황" [level=3] [ref=e213]
+                  - generic [ref=e214]:
+                    - generic [ref=e215]:
+                      - generic [ref=e216]: "15"
+                      - generic [ref=e217]: 총 연차
+                    - generic [ref=e218]:
+                      - generic [ref=e219]: "11"
+                      - generic [ref=e220]: 잔여
+                    - generic [ref=e221]:
+                      - generic [ref=e222]: "1"
+                      - generic [ref=e223]: 사용
+                    - generic [ref=e224]:
+                      - generic [ref=e225]: "3"
+                      - generic [ref=e226]: 승인대기
+                  - generic [ref=e230]: 27% 사용
+                  - generic [ref=e231]: "만료일: 2027-03-01"
+                - generic [ref=e232]: 오후 02:32
+        - generic [ref=e234]:
+          - textbox "메시지를 입력하세요... (Enter로 전송)" [active] [ref=e236]
+          - button [disabled] [ref=e237]:
+            - img [ref=e238]
+```

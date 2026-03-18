@@ -21,8 +21,8 @@ export default function LoginPage() {
 
     try {
       const res = await api.post('/auth/login', { email, password });
-      const { token, user } = res.data;
-      login(token, user);
+      const { token, employee } = res.data;
+      login(token, employee);
       router.push('/channels');
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {

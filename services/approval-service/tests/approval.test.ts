@@ -1,4 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Set JWT_SECRET before importing app (which loads serviceAuthMiddleware)
+process.env.JWT_SECRET = 'test-secret-for-approval-service';
+
+import { createServiceToken } from '@palette/shared/middleware/service-auth';
 import app from '../src/app.js';
 
 // ─── Mock DB ────────────────────────────────────────────────────────────────
@@ -25,9 +30,13 @@ function setupChains() {
   mockReturning.mockResolvedValue([]);
 
   // select().from(...).where(...).orderBy(...)  OR  select().from(...).orderBy(...)
+  // mockSelectWhere returns a thenable (for count queries) AND has orderBy (for ordered queries)
   mockSelect.mockReturnValue({ from: mockFrom });
   mockFrom.mockReturnValue({ where: mockSelectWhere, orderBy: mockOrderBy });
-  mockSelectWhere.mockReturnValue({ orderBy: mockOrderBy });
+  mockSelectWhere.mockImplementation(() => {
+    const result = Promise.resolve([{ cnt: 0 }]);
+    return Object.assign(result, { orderBy: mockOrderBy });
+  });
   mockOrderBy.mockResolvedValue([]);
 
   // update(...).set(...).where(...).returning(...)
@@ -42,6 +51,14 @@ vi.mock('../src/db.js', () => ({
     insert: mockInsert,
     select: mockSelect,
     update: mockUpdate,
+    transaction: async (fn: (tx: unknown) => Promise<unknown>) => {
+      const tx = {
+        insert: mockInsert,
+        select: mockSelect,
+        update: mockUpdate,
+      };
+      return fn(tx);
+    },
   }),
 }));
 
@@ -53,7 +70,14 @@ function resetMocks() {
 }
 
 function makeRequest(method: string, path: string, body?: unknown) {
-  const init: RequestInit = { method, headers: { 'Content-Type': 'application/json' } };
+  const token = createServiceToken('test-service');
+  const init: RequestInit = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  };
   if (body) init.body = JSON.stringify(body);
   return app.request(path, init);
 }
@@ -92,8 +116,7 @@ describe('approval-service', () => {
       const now = new Date('2026-03-12T10:30:00Z');
       vi.useFakeTimers({ now });
 
-      // Mock: select from approvals for sequence (orderBy call #1)
-      mockOrderBy.mockResolvedValueOnce([]);
+      // Mock: count query for sequence (via mockSelectWhere — returns [{ cnt: 0 }] by default)
 
       // Mock: insert into approvals returning (returning call #1)
       mockReturning.mockResolvedValueOnce([
@@ -110,7 +133,7 @@ describe('approval-service', () => {
         },
       ]);
 
-      // Mock: audit log - select latest for prev_hash (orderBy call #2)
+      // Mock: audit log - select latest for prev_hash (orderBy call #1)
       mockOrderBy.mockResolvedValueOnce([]);
 
       // Mock: insert audit log returning (returning call #2)

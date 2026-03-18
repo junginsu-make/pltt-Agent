@@ -1,4 +1,4 @@
-import { eq, and, desc, ne } from 'drizzle-orm';
+import { eq, and, desc, ne, lte, count, sql } from 'drizzle-orm';
 import { approvals } from '@palette/db';
 import { generateApprovalId } from '@palette/shared';
 import type { Database } from '../db.js';
@@ -45,56 +45,51 @@ export async function createApproval(db: Database, input: CreateApprovalInput) {
   const now = new Date();
   const year = now.getFullYear();
 
-  // Get count of approvals this year for sequence number
-  const existing = await db
-    .select()
-    .from(approvals)
-    .orderBy(desc(approvals.createdAt));
-
-  // Find the max sequence number from existing IDs for this year
-  const prefix = `APR-${year}-`;
-  let maxSeq = 0;
-  for (const row of existing) {
-    if (row.id.startsWith(prefix)) {
-      const seq = parseInt(row.id.replace(prefix, ''), 10);
-      if (seq > maxSeq) maxSeq = seq;
-    }
-  }
-
-  const id = generateApprovalId(year, maxSeq + 1);
-
   // Calculate auto_approve_at
   const autoApproveAt = input.autoApproveHours
     ? new Date(now.getTime() + input.autoApproveHours * 60 * 60 * 1000)
     : null;
 
-  const result = await db
-    .insert(approvals)
-    .values({
-      id,
-      type: input.type,
-      relatedId: input.relatedId,
-      requestedBy: input.requestedBy,
-      approverId: input.approverId,
-      status: 'pending',
-      requestSummary: input.requestSummary,
-      autoApproveAt,
-    })
-    .returning();
+  // Atomic: count → insert → audit log
+  const created = await db.transaction(async (tx) => {
+    // Get count of approvals this year (efficient count query instead of full table scan)
+    const countResult = await tx
+      .select({ cnt: count() })
+      .from(approvals)
+      .where(sql`${approvals.id} LIKE ${'APR-' + year + '-%'}`);
+    const seq = Number(countResult[0]?.cnt ?? 0) + 1;
+    const id = generateApprovalId(year, seq);
 
-  const created = result[0];
+    const result = await tx
+      .insert(approvals)
+      .values({
+        id,
+        type: input.type,
+        relatedId: input.relatedId,
+        requestedBy: input.requestedBy,
+        approverId: input.approverId,
+        status: 'pending',
+        requestSummary: input.requestSummary,
+        autoApproveAt,
+      })
+      .returning();
 
-  // Write audit log
-  await createAuditLogEntry(db, {
-    actor: input.requestedBy,
-    action: 'approval.created',
-    targetType: 'approval',
-    targetId: id,
-    details: {
-      type: input.type,
-      relatedId: input.relatedId,
-      approverId: input.approverId,
-    },
+    const inserted = result[0];
+
+    // Write audit log within transaction
+    await createAuditLogEntry(tx as unknown as Database, {
+      actor: input.requestedBy,
+      action: 'approval.created',
+      targetType: 'approval',
+      targetId: id,
+      details: {
+        type: input.type,
+        relatedId: input.relatedId,
+        approverId: input.approverId,
+      },
+    });
+
+    return inserted;
   });
 
   return {
@@ -156,31 +151,32 @@ export async function decideApproval(db: Database, id: string, input: DecideAppr
     return { error: 'comment_required' as const };
   }
 
-  // 5. Update the approval
+  // 5-6: Atomic transaction for update + audit log
   const now = new Date();
-  const updated = await db
-    .update(approvals)
-    .set({
-      status: input.decision,
-      reviewComment: input.comment ?? null,
-      completedAt: now,
-    })
-    .where(eq(approvals.id, id))
-    .returning();
+  const updatedApproval = await db.transaction(async (tx) => {
+    const updated = await tx
+      .update(approvals)
+      .set({
+        status: input.decision,
+        reviewComment: input.comment ?? null,
+        completedAt: now,
+      })
+      .where(eq(approvals.id, id))
+      .returning();
 
-  const updatedApproval = updated[0];
+    await createAuditLogEntry(tx as unknown as Database, {
+      actor: input.decidedBy,
+      action: `approval.${input.decision}`,
+      targetType: 'approval',
+      targetId: id,
+      details: {
+        decision: input.decision,
+        comment: input.comment ?? null,
+        relatedId: approval.relatedId,
+      },
+    });
 
-  // 6. Create audit log entry with hash chain
-  await createAuditLogEntry(db, {
-    actor: input.decidedBy,
-    action: `approval.${input.decision}`,
-    targetType: 'approval',
-    targetId: id,
-    details: {
-      decision: input.decision,
-      comment: input.comment ?? null,
-      relatedId: approval.relatedId,
-    },
+    return updated[0];
   });
 
   return {
@@ -190,6 +186,17 @@ export async function decideApproval(db: Database, id: string, input: DecideAppr
       completed_at: updatedApproval.completedAt?.toISOString() ?? null,
     },
   };
+}
+
+export async function getExpiredApprovals(db: Database) {
+  const now = new Date();
+  const results = await db
+    .select()
+    .from(approvals)
+    .where(and(eq(approvals.status, 'pending'), lte(approvals.autoApproveAt, now)))
+    .orderBy(desc(approvals.createdAt));
+
+  return results.map(toSnakeCaseResponse);
 }
 
 export async function getApprovalHistory(db: Database, approverId: string) {

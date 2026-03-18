@@ -13,6 +13,7 @@ export interface BalanceItem {
 }
 
 export interface BalanceResponse {
+  type: 'leave_balance';
   employee_id: string;
   year: number;
   balances: BalanceItem[];
@@ -51,6 +52,7 @@ export async function getLeaveBalance(employeeId: string, year: number): Promise
   }));
 
   return {
+    type: 'leave_balance',
     employee_id: employeeId,
     year,
     balances: balanceItems,

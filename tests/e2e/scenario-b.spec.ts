@@ -38,7 +38,7 @@ class MessengerPage {
     await this.page.locator(SELECTORS.MESSAGE_INPUT).waitFor({ state: 'visible' });
   }
 
-  /** Send a text message and wait for API acknowledgement */
+  /** Send a text message via socket and wait for it to appear */
   async sendMessage(text: string): Promise<void> {
     const input = this.page.locator(SELECTORS.MESSAGE_INPUT);
     await input.fill(text);
@@ -46,10 +46,13 @@ class MessengerPage {
     const sendButton = this.page.locator(SELECTORS.SEND_BUTTON);
     await sendButton.click();
 
-    await this.page.waitForResponse(
-      (resp) => resp.url().includes(API_ROUTES.SEND_MESSAGE) && resp.status() === 200,
-      { timeout: TIMEOUTS.MESSAGE_DELIVERY },
-    );
+    // Wait for the sent message to appear in message list
+    const messageList = this.page.locator(SELECTORS.MESSAGE_LIST);
+    await messageList
+      .locator(SELECTORS.TEXT_BUBBLE)
+      .filter({ hasText: text })
+      .last()
+      .waitFor({ state: 'visible', timeout: TIMEOUTS.MESSAGE_DELIVERY });
   }
 
   /** Send a DM in the currently active DM channel */
@@ -60,13 +63,13 @@ class MessengerPage {
     const sendButton = this.page.locator(SELECTORS.SEND_BUTTON);
     await sendButton.click();
 
-    // DM messages go through either /messenger/send or /messenger/dm
-    await this.page.waitForResponse(
-      (resp) =>
-        (resp.url().includes(API_ROUTES.SEND_MESSAGE) || resp.url().includes(API_ROUTES.SEND_DM)) &&
-        (resp.status() === 200 || resp.status() === 201),
-      { timeout: TIMEOUTS.MESSAGE_DELIVERY },
-    );
+    // Wait for the sent DM to appear
+    const messageList = this.page.locator(SELECTORS.MESSAGE_LIST);
+    await messageList
+      .locator(SELECTORS.TEXT_BUBBLE)
+      .filter({ hasText: text })
+      .last()
+      .waitFor({ state: 'visible', timeout: TIMEOUTS.MESSAGE_DELIVERY });
   }
 
   /** Wait for an AI text response containing the expected substring */
@@ -74,7 +77,7 @@ class MessengerPage {
     const messageList = this.page.locator(SELECTORS.MESSAGE_LIST);
 
     await messageList
-      .locator(SELECTORS.TEXT_BUBBLE)
+      .locator(`${SELECTORS.TEXT_BUBBLE}, ${SELECTORS.CARD_MESSAGE}`)
       .filter({ hasText: expectedSubstring })
       .last()
       .waitFor({ state: 'visible', timeout: TIMEOUTS.AI_RESPONSE });
@@ -172,7 +175,7 @@ test.describe.serial('Scenario B: 대표 일정 조회 + 팀장 호출 + DM', ()
   test('Step 1: 대표(EMP-CEO) 로그인', async () => {
     await loginAs(ceoPage, USERS.CEO.email, USERS.CEO.password);
 
-    await expect(ceoPage).toHaveURL(/\/channels\//);
+    await expect(ceoPage).toHaveURL(/\/channels/);
     await ceoPage.locator(SELECTORS.SIDEBAR).waitFor({
       state: 'visible',
       timeout: TIMEOUTS.MESSAGE_DELIVERY,
@@ -221,7 +224,7 @@ test.describe.serial('Scenario B: 대표 일정 조회 + 팀장 호출 + DM', ()
 
     // Also log in as team leader and verify they received the call notification
     await loginAs(teamLeaderPage, USERS.TEAM_LEADER.email, USERS.TEAM_LEADER.password);
-    await expect(teamLeaderPage).toHaveURL(/\/channels\//);
+    await expect(teamLeaderPage).toHaveURL(/\/channels/);
 
     // Team leader should see a notification about the call
     await teamLeaderPage.locator(SELECTORS.SIDEBAR).waitFor({

@@ -217,16 +217,17 @@ interface Message {
 }
 ```
 
-### Socket.IO 연결
+### Socket.IO 연결 (구현 완료)
 
 ```typescript
-// hooks/useSocket.ts
+// hooks/useSocket.ts — 실제 구현 반영
 
 import { io, Socket } from 'socket.io-client';
+import api from '@/lib/api';
 
 function useSocket() {
   const socket = useRef<Socket | null>(null);
-  const { addMessage, setTyping, updateChannel, setConnected } = useChatStore();
+  const { addMessage, setTyping, updateChannel, setConnected, setChannels } = useChatStore();
 
   useEffect(() => {
     const token = getToken();
@@ -238,61 +239,38 @@ function useSocket() {
     socket.current.on('connect', () => setConnected(true));
     socket.current.on('disconnect', () => setConnected(false));
 
-    // 새 메시지
-    socket.current.on('message:new', (data: {
-      channelId: string;
-      message: Message;
-    }) => {
-      addMessage(data.channelId, data.message);
-    });
+    // ✅ 새 메시지
+    socket.current.on('message:new', (data) => addMessage(data.channelId, data.message));
 
-    // 타이핑
-    socket.current.on('message:typing', (data: {
-      channelId: string;
-      userId: string;
-      displayName: string;
-      isTyping: boolean;
-    }) => {
-      setTyping(data.channelId, data.userId, data.isTyping);
-    });
+    // ✅ 타이핑
+    socket.current.on('typing:start', (data) => setTyping(data.channelId, data.userId, data.displayName, true));
+    socket.current.on('typing:stop', (data) => setTyping(data.channelId, data.userId, data.displayName, false));
 
-    // 결재 결과
-    socket.current.on('approval:decided', (data: {
-      approvalId: string;
-      decision: string;
-      leaveRequestId: string;
-    }) => {
-      // 알림 표시
-    });
-
-    // 담당자 개입/복귀
-    socket.current.on('channel:takeover', (data: {
-      channelId: string;
-      humanTakeover: boolean;
-      takenOverBy?: string;
-    }) => {
+    // ✅ 담당자 개입/복귀 — POST /takeover 후 서버에서 자동 발신
+    socket.current.on('channel:takeover', (data) => {
       updateChannel(data.channelId, { humanTakeover: data.humanTakeover });
     });
 
+    // ✅ 결재 결과 — message:new로 카드 메시지가 도착
+    socket.current.on('approval:decided', (data) => {
+      console.log('[socket] approval:decided', data);
+    });
+
+    // ✅ 알림 (DM 호출 등) — 채널 목록 리프레시
+    socket.current.on('notification:new', async (data) => {
+      if (data.channelId) socket.current?.emit('channel:join', { channelId: data.channelId });
+      const res = await api.get('/messenger/channels');
+      setChannels(res.data.channels || res.data);
+    });
+
     return () => { socket.current?.disconnect(); };
-  }, []);
+  }, [token, addMessage, setTyping, updateChannel, setConnected, setChannels]);
 
-  // 메시지 전송
   const sendMessage = (channelId: string, content: string) => {
-    socket.current?.emit('message:send', { channelId, content });
+    socket.current?.emit('message:send', { channelId, content, contentType: 'text' });
   };
 
-  // DM 전송
-  const sendDM = (toUserId: string, content: string) => {
-    socket.current?.emit('dm:send', { toUserId, content });
-  };
-
-  // 개입/복귀
-  const takeover = (channelId: string, action: 'takeover' | 'release') => {
-    socket.current?.emit(`takeover:${action === 'takeover' ? 'start' : 'end'}`, { channelId });
-  };
-
-  return { sendMessage, sendDM, takeover };
+  return { sendMessage, startTyping, stopTyping, socket: socketRef };
 }
 ```
 

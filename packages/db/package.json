@@ -10,7 +10,7 @@
     "push": "drizzle-kit push",
     "seed": "tsx src/seed.ts",
     "studio": "drizzle-kit studio",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist drizzle"

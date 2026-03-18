@@ -53,7 +53,7 @@ export default function ChannelPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div data-testid="chat-panel" className="flex flex-1 flex-col overflow-hidden">
       <ChatHeader channel={channel ?? null} />
       <MessageList channelId={channelId} />
       <MessageInput

@@ -4,7 +4,8 @@ export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30000,
   expect: { timeout: 5000 },
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: 1,
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:3010',
@@ -16,7 +17,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'pnpm --filter @palette/messenger dev',
-      url: 'http://localhost:3010',
+      url: 'http://localhost:3010/login',
       reuseExistingServer: true,
     },
   ],

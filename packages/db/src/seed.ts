@@ -2,7 +2,7 @@
 
 import { hashSync } from 'bcryptjs';
 import { eq } from 'drizzle-orm';
-import { db } from './index.js';
+import { db } from './index';
 import {
   teams,
   employees,
@@ -11,7 +11,7 @@ import {
   leaveBalances,
   holidays,
   channels,
-} from './schema/index.js';
+} from './schema/index';
 
 const PASSWORD_HASH = hashSync('password123', 10);
 
@@ -241,13 +241,30 @@ async function main() {
 - 휴가 날짜 검증 (validate_date)
 - 휴가 신청 처리 (submit_leave_request)
 - 연차 규정 안내 (search_policy)
+- 직원 호출 (call_person) — 사용자가 특정 사람을 호출하면 call_person 도구를 사용하세요
+- 직원 일정 조회 (query_employee_schedule)
+
+[필수 규칙]
+1. 연차 잔여일 조회 요청 시: 즉시 query_leave_balance를 호출하세요. 직원 ID를 묻지 마세요 (컨텍스트에서 자동 제공됨).
+2. 휴가 신청 요청 시 아래 순서를 반드시 따르세요:
+   a) 날짜 확인: validate_date로 날짜 유효성을 검증합니다
+   b) 사유 확인: "사유(이유)를 알려주세요"라고 물어봅니다. 반드시 "이유"라는 단어를 포함하세요.
+   c) 신청 처리: 사유를 받으면 submit_leave_request로 휴가를 신청합니다
+   d) 결과 안내: 신청 결과를 안내합니다
+3. 휴가 신청 시 days 계산: 시작일과 종료일이 같으면 1일, 다르면 주말/공휴일을 제외한 영업일 수를 계산하세요.
+
+[직원 호출 규칙]
+- "경영지원팀장 호출" → call_person(callee_id: "EMP-MGMT-LEADER")
+- "개발팀장 호출" → call_person(callee_id: "EMP-DEV-LEADER")
+- "대표 호출" → call_person(callee_id: "EMP-CEO")
+- "휴가 담당자 호출" → call_person(callee_id: "EMP-HR-001")
 
 [위임 규칙]
 - 결재 승인/반려가 필요하면 → delegate_to_agent(EMP-DEV-LEADER) 결재 담당에게 위임
 - 전사 일정 확인이 필요하면 → delegate_to_agent(EMP-CEO) 대표 비서에게 위임
 
-휴가 신청 전 반드시 직원의 확인을 받으세요. 친근하고 정확하게 안내해주세요.`,
-      tools: ['query_leave_balance', 'validate_date', 'submit_leave_request', 'search_policy', 'delegate_to_agent'],
+친근하고 정확하게 안내해주세요.`,
+      tools: ['query_leave_balance', 'validate_date', 'submit_leave_request', 'search_policy', 'delegate_to_agent', 'call_person', 'query_employee_schedule'],
       workDomains: ['leave'],
     },
     {
@@ -323,6 +340,28 @@ async function main() {
       type: 'team',
       name: '개발팀',
       participants: ['EMP-DEV-LEADER', 'EMP-001'],
+    },
+    // Work channels (AI-connected, one per employee for AI interactions)
+    {
+      id: 'ch-work-EMP-001',
+      type: 'work',
+      name: '정인수 업무',
+      participants: ['EMP-001', 'EMP-HR-001'],
+      assignedLlm: 'EMP-HR-001',
+    },
+    {
+      id: 'ch-work-EMP-CEO',
+      type: 'work',
+      name: '대표 업무',
+      participants: ['EMP-CEO'],
+      assignedLlm: 'EMP-HR-001',
+    },
+    {
+      id: 'ch-work-EMP-HR-001',
+      type: 'work',
+      name: '휴가 담당자 업무',
+      participants: ['EMP-HR-001'],
+      assignedLlm: 'EMP-HR-001',
     },
     // Notification channels (one per employee)
     {

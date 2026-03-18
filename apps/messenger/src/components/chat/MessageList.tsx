@@ -9,12 +9,15 @@ interface MessageListProps {
   channelId: string;
 }
 
+const EMPTY_MESSAGES: never[] = [];
+const EMPTY_TYPING: never[] = [];
+
 export default function MessageList({ channelId }: MessageListProps) {
   const messages = useChatStore(
-    (s) => s.messagesByChannel[channelId] || []
+    (s) => s.messagesByChannel[channelId] ?? EMPTY_MESSAGES
   );
   const typingUsers = useChatStore(
-    (s) => s.typingUsers[channelId] || []
+    (s) => s.typingUsers[channelId] ?? EMPTY_TYPING
   );
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -38,7 +41,7 @@ export default function MessageList({ channelId }: MessageListProps) {
   }
 
   return (
-    <div className="scrollbar-thin flex-1 overflow-y-auto bg-gray-50 py-4">
+    <div data-testid="message-list" className="scrollbar-thin flex-1 overflow-y-auto bg-gray-50 py-4">
       {groupedByDate.length === 0 && (
         <div className="flex h-full flex-col items-center justify-center gap-3">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">

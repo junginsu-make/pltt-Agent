@@ -65,6 +65,7 @@ export default function MessageInput({
       <div className="flex items-end gap-2">
         <div className="relative flex-1">
           <textarea
+            data-testid="message-input"
             value={text}
             onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
               setText(e.target.value);
@@ -82,6 +83,7 @@ export default function MessageInput({
           />
         </div>
         <button
+          data-testid="send-button"
           onClick={handleSend}
           disabled={!canSend}
           className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
@@ -97,7 +99,7 @@ export default function MessageInput({
       </div>
 
       {!isConnected && (
-        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-600">
+        <div data-testid="connection-banner" className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-600">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
           서버에 연결 중입니다...
         </div>

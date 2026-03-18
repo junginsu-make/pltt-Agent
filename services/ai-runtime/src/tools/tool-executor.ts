@@ -1,6 +1,15 @@
-import { db, employees } from '@palette/db';
+import { db, employees, messages as messagesTable } from '@palette/db';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { createServiceToken, type ServiceJwtPayload } from '@palette/shared/middleware/service-auth';
+import { generateMessageId } from '@palette/shared';
+
+function getServiceHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${createServiceToken('ai-runtime')}`,
+  };
+}
 
 const toolInputSchemas: Record<string, z.ZodType> = {
   query_leave_balance: z.object({ employee_id: z.string().min(1) }),
@@ -22,7 +31,7 @@ function requireEnv(name: string): string {
 
 const LEAVE_SERVICE_URL = requireEnv('LEAVE_SERVICE_URL');
 const APPROVAL_SERVICE_URL = requireEnv('APPROVAL_SERVICE_URL');
-const MESSAGING_SERVICE_URL = requireEnv('MESSAGING_SERVICE_URL');
+const MESSAGING_SERVICE_URL = requireEnv('MESSAGING_SERVER_URL');
 const AI_RUNTIME_URL = requireEnv('AI_RUNTIME_URL');
 
 const DELEGATION_TIMEOUT_MS = 10_000;
@@ -78,7 +87,7 @@ export async function executeTool(
       case 'reject_request':
         return await decideApproval(input.approval_id as string, 'rejected', input.comment as string);
       case 'call_person':
-        return await callPerson(input.callee_id as string);
+        return await callPerson(input.callee_id as string, _senderUserId);
       case 'query_employee_schedule':
         return await queryEmployeeSchedule(input.employee_id as string);
       case 'get_team_summary':
@@ -98,7 +107,9 @@ export async function executeTool(
 }
 
 async function queryLeaveBalance(employeeId: string): Promise<ToolResult> {
-  const res = await fetch(`${LEAVE_SERVICE_URL}/leave/balance/${employeeId}`);
+  const res = await fetch(`${LEAVE_SERVICE_URL}/leave/balance/${employeeId}`, {
+    headers: getServiceHeaders(),
+  });
   if (!res.ok) return { success: false, error: `Failed to query balance: ${res.status}` };
   return { success: true, data: await res.json() };
 }
@@ -106,7 +117,7 @@ async function queryLeaveBalance(employeeId: string): Promise<ToolResult> {
 async function validateDate(input: Record<string, unknown>): Promise<ToolResult> {
   const res = await fetch(`${LEAVE_SERVICE_URL}/leave/validate-date`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getServiceHeaders(),
     body: JSON.stringify(input),
   });
   if (!res.ok) return { success: false, error: `Failed to validate date: ${res.status}` };
@@ -116,7 +127,7 @@ async function validateDate(input: Record<string, unknown>): Promise<ToolResult>
 async function submitLeaveRequest(input: Record<string, unknown>): Promise<ToolResult> {
   const res = await fetch(`${LEAVE_SERVICE_URL}/leave/request`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getServiceHeaders(),
     body: JSON.stringify(input),
   });
   if (!res.ok) {
@@ -126,7 +137,73 @@ async function submitLeaveRequest(input: Record<string, unknown>): Promise<ToolR
       error: (err as Record<string, Record<string, string>>)?.error?.message || `Failed to submit: ${res.status}`,
     };
   }
-  return { success: true, data: await res.json() };
+  const leaveData = await res.json() as {
+    data: {
+      type: string;
+      request: { id: string; employee_id: string; start_date: string; end_date: string; days: number; reason: string };
+      approval: { approver_id: string | null; approver_name: string | null };
+    };
+  };
+
+  // Auto-create approval request if approver exists
+  const req = leaveData.data.request;
+  const appr = leaveData.data.approval;
+  if (appr?.approver_id) {
+    try {
+      const approvalRes = await fetch(`${APPROVAL_SERVICE_URL}/approvals`, {
+        method: 'POST',
+        headers: getServiceHeaders(),
+        body: JSON.stringify({
+          type: 'leave_request',
+          related_id: req.id,
+          requested_by: req.employee_id,
+          approver_id: appr.approver_id,
+          request_summary: `${req.start_date}~${req.end_date} ${req.days}일 연차 (${req.reason ?? ''})`,
+          auto_approve_hours: 2,
+        }),
+      });
+
+      if (approvalRes.ok) {
+        const approvalData = await approvalRes.json() as { data: { id: string; auto_approve_at: string | null } };
+
+        // Send approval notification to approver's notification channel
+        const employeeRes = await db
+          .select({ name: employees.name })
+          .from(employees)
+          .where(eq(employees.id, req.employee_id));
+        const employeeName = employeeRes[0]?.name ?? req.employee_id;
+
+        const notificationChannelId = `ch-notification-${appr.approver_id}`;
+
+        // Directly insert into messages table for the approver's notification channel
+        await db.insert(messagesTable).values({
+          id: generateMessageId(),
+          channelId: notificationChannelId,
+          senderType: 'llm',
+          senderUserId: 'system',
+          displayName: '결재 알림',
+          contentType: 'approval',
+          contentText: `${employeeName}님이 ${req.start_date} ~ ${req.end_date} (${req.days}일) 연차를 신청했습니다. 사유: ${req.reason ?? ''}`,
+          cardData: {
+            type: 'approval',
+            approvalId: approvalData.data.id,
+            employeeName,
+            date: `${req.start_date} ~ ${req.end_date}`,
+            leaveType: '연차',
+            reason: req.reason ?? '',
+            days: req.days,
+            autoApproveAt: approvalData.data.auto_approve_at,
+          },
+          isLlmAuto: false,
+          readBy: [],
+        });
+      }
+    } catch (err) {
+      console.error('[tool-executor] Failed to create approval:', err);
+    }
+  }
+
+  return { success: true, data: leaveData };
 }
 
 async function searchPolicy(_query: string): Promise<ToolResult> {
@@ -139,6 +216,7 @@ async function checkTeamSchedule(input: Record<string, unknown>): Promise<ToolRe
   const date = input.date as string;
   const res = await fetch(
     `${LEAVE_SERVICE_URL}/leave/requests?team_id=${teamId}&date=${date}&status=approved`,
+    { headers: getServiceHeaders() },
   );
   if (!res.ok) return { success: false, error: `Failed to check schedule: ${res.status}` };
   return { success: true, data: await res.json() };
@@ -151,7 +229,7 @@ async function decideApproval(
 ): Promise<ToolResult> {
   const res = await fetch(`${APPROVAL_SERVICE_URL}/approvals/${approvalId}/decide`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getServiceHeaders(),
     body: JSON.stringify({ decision, decided_by: 'system', comment }),
   });
   if (!res.ok) return { success: false, error: `Failed to decide: ${res.status}` };
@@ -161,6 +239,7 @@ async function decideApproval(
 async function queryEmployeeSchedule(employeeId: string): Promise<ToolResult> {
   const res = await fetch(
     `${LEAVE_SERVICE_URL}/leave/requests?employee_id=${employeeId}&status=approved`,
+    { headers: getServiceHeaders() },
   );
   if (!res.ok) return { success: false, error: `Failed to query schedule: ${res.status}` };
   return { success: true, data: await res.json() };
@@ -170,16 +249,17 @@ async function getTeamSummary(teamId: string): Promise<ToolResult> {
   const month = new Date().toISOString().slice(0, 7);
   const res = await fetch(
     `${LEAVE_SERVICE_URL}/leave/team-schedule?teamId=${teamId}&month=${month}`,
+    { headers: getServiceHeaders() },
   );
   if (!res.ok) return { success: false, error: `Failed to get team summary: ${res.status}` };
   return { success: true, data: await res.json() };
 }
 
-async function callPerson(calleeId: string): Promise<ToolResult> {
+async function callPerson(calleeId: string, callerUserId?: string): Promise<ToolResult> {
   const res = await fetch(`${MESSAGING_SERVICE_URL}/messenger/call`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ callee_id: calleeId }),
+    headers: getServiceHeaders(),
+    body: JSON.stringify({ callee_id: calleeId, caller_id: callerUserId }),
   });
   if (!res.ok) return { success: false, error: `Call failed: ${res.status}` };
   return { success: true, data: await res.json() };
@@ -226,7 +306,7 @@ async function delegateToAgent(
 
     const res = await fetch(`${AI_RUNTIME_URL}/runtime/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getServiceHeaders(),
       body: JSON.stringify({
         llm_user_id: targetUserId,
         channel_id: currentCtx.originChannelId,
@@ -272,7 +352,7 @@ async function inviteAgentToChannel(input: Record<string, unknown>): Promise<Too
 
   const res = await fetch(`${MESSAGING_SERVICE_URL}/messenger/channel/invite`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getServiceHeaders(),
     body: JSON.stringify({ channel_id: channelId, user_id: targetUserId }),
   });
 

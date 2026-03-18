@@ -1,0 +1,77 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - alert [ref=e2]
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: 정
+          - generic [ref=e8]:
+            - generic [ref=e9]: 정인수
+            - generic [ref=e10]: 프론트엔드 개발자
+        - button "로그아웃" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - img [ref=e17]
+            - text: 알림
+          - button "정 정인수 알림" [ref=e19] [cursor=pointer]:
+            - generic [ref=e20]: 정
+            - generic [ref=e23]: 정인수 알림
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - img [ref=e26]
+            - text: 업무
+          - button "정 정인수 업무" [ref=e28] [cursor=pointer]:
+            - generic [ref=e29]: 정
+            - generic [ref=e32]: 정인수 업무
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - img [ref=e35]
+            - text: 팀
+          - button "개 개발팀" [ref=e37] [cursor=pointer]:
+            - generic [ref=e38]: 개
+            - generic [ref=e41]: 개발팀
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - img [ref=e44]
+            - text: 전사
+          - button "전 전사 공지" [ref=e46] [cursor=pointer]:
+            - generic [ref=e47]: 전
+            - generic [ref=e50]: 전사 공지
+    - main [ref=e51]:
+      - generic [ref=e52]:
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - heading "정인수 업무" [level=2] [ref=e55]
+            - generic [ref=e56]: "1"
+          - button "직접 개입" [ref=e58] [cursor=pointer]
+        - generic [ref=e60]:
+          - generic [ref=e64]: 2026년 3월 18일 수요일
+          - generic [ref=e66]:
+            - generic [ref=e68]:
+              - generic [ref=e69]: 오후 02:32
+              - generic [ref=e70]: 나 다음주에 3일 연속 휴가 쓸 수 있어?
+            - generic [ref=e72]:
+              - generic [ref=e73]: 오후 02:32
+              - generic [ref=e74]: 휴가 쓰고 싶어
+            - generic [ref=e76]:
+              - generic [ref=e77]: 오후 02:32
+              - generic [ref=e78]: 아까 휴가 취소할래
+            - generic [ref=e80]:
+              - generic [ref=e81]: 오후 02:32
+              - generic [ref=e82]: 아까 휴가 취소할래
+            - generic [ref=e84]:
+              - generic [ref=e85]: 오후 02:32
+              - generic [ref=e86]: 나 휴가 몇개 남았어?
+            - generic [ref=e88]:
+              - generic [ref=e89]: 오후 02:32
+              - generic [ref=e90]: 나 휴가 몇개 남았어?
+        - generic [ref=e92]:
+          - textbox "메시지를 입력하세요... (Enter로 전송)" [active] [ref=e94]
+          - button [disabled] [ref=e95]:
+            - img [ref=e96]
+```

@@ -60,14 +60,20 @@ export class LLMPipeline {
     // 4. Get tools for this role
     const tools = getToolDefinitions(config.llmRole, (config.tools as string[]) || []);
 
-    // 4. Call LLM
+    // 4. Inject sender context into system prompt
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const senderContext = `\n\n[현재 대화 컨텍스트]\n- 오늘 날짜: ${dateStr} (${today.getFullYear()}년)\n- 메시지 발신자: ${request.senderUserId}\n- 채널: ${request.channelId}\n- 발신자의 employee_id를 tool 호출 시 자동으로 사용하세요. 사용자에게 ID를 다시 물어보지 마세요.\n- 사용자가 \"3월 20일\" 같이 연도 없이 날짜를 말하면 현재 연도(${today.getFullYear()})로 해석하세요.\n- 날짜 형식은 YYYY-MM-DD를 사용하세요.`;
+    const systemPrompt = config.systemPrompt + senderContext;
+
+    // 5. Call LLM
     const totalUsage = { inputTokens: 0, outputTokens: 0 };
     const allToolCalls: Array<{ name: string; input: Record<string, unknown> }> = [];
     const allToolResults: Array<{ toolName: string; result: unknown }> = [];
 
     let response = await this.adapter.chat({
       model: config.llmModel || 'claude-haiku-4-5-20251001',
-      systemPrompt: config.systemPrompt,
+      systemPrompt,
       messages,
       tools: tools.length > 0 ? tools : undefined,
       maxTokens: 1024,
@@ -104,7 +110,7 @@ export class LLMPipeline {
       // Re-call LLM with tool results
       response = await this.adapter.chat({
         model: config.llmModel || 'claude-haiku-4-5-20251001',
-        systemPrompt: config.systemPrompt,
+        systemPrompt,
         messages,
         tools: tools.length > 0 ? tools : undefined,
         maxTokens: 1024,
@@ -121,9 +127,17 @@ export class LLMPipeline {
     // 7. Check for card_data in tool results (for structured UI cards)
     let cardData: Record<string, unknown> | undefined;
     for (const tr of allToolResults) {
-      const data = tr.result as Record<string, unknown>;
-      if (data && typeof data === 'object' && 'type' in data) {
-        cardData = data;
+      const raw = tr.result as Record<string, unknown>;
+      if (!raw || typeof raw !== 'object') continue;
+      // Direct type field (e.g. { type: 'leave_balance', ... })
+      if ('type' in raw) {
+        cardData = raw;
+        break;
+      }
+      // Nested in data wrapper (e.g. { data: { type: 'leave_balance', ... } })
+      const nested = raw.data as Record<string, unknown> | undefined;
+      if (nested && typeof nested === 'object' && 'type' in nested) {
+        cardData = nested;
         break;
       }
     }

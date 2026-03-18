@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import api from '@/lib/api';
+import { useAuthStore } from '@/stores/auth-store';
 
 interface ApprovalCardProps {
   data: Record<string, unknown>;
@@ -10,6 +10,7 @@ interface ApprovalCardProps {
 export default function ApprovalCard({ data }: ApprovalCardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [decided, setDecided] = useState(false);
+  const currentUser = useAuthStore((s) => s.user);
 
   const approvalId = data.approvalId as string;
   const employeeName = (data.employeeName as string) || '';
@@ -22,7 +23,20 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
   const handleDecide = async (decision: 'approve' | 'reject') => {
     setIsSubmitting(true);
     try {
-      await api.post(`/approvals/${approvalId}/decide`, { decision });
+      const approvalServiceUrl = process.env.NEXT_PUBLIC_APPROVAL_SERVICE_URL || 'http://localhost:3002/api/v1';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('palette_token') : null;
+      await fetch(`${approvalServiceUrl}/approvals/${approvalId}/decide`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          decision: decision === 'approve' ? 'approved' : 'rejected',
+          decided_by: currentUser?.id ?? '',
+          comment: decision === 'approve' ? '승인합니다' : '',
+        }),
+      });
       setDecided(true);
     } catch {
       /* handle error silently */
@@ -32,7 +46,7 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
   };
 
   return (
-    <div className="w-80 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div data-testid="approval-card" className="w-80 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
       <h3 className="mb-3 text-sm font-semibold text-gray-900">
         휴가 승인 요청
       </h3>
@@ -99,6 +113,7 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
       {!decided ? (
         <div className="flex gap-2">
           <button
+            data-testid="approve-button"
             onClick={() => handleDecide('approve')}
             disabled={isSubmitting}
             className="flex-1 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-600 disabled:opacity-50"
@@ -106,6 +121,7 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
             승인
           </button>
           <button
+            data-testid="reject-button"
             onClick={() => handleDecide('reject')}
             disabled={isSubmitting}
             className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"

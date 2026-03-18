@@ -8,8 +8,16 @@
 // Running daily ensures it doesn't miss the 1st even if the server was down.
 
 import type { JobDefinition } from './job-runner.js';
+import { createServiceToken } from '@palette/shared/middleware/service-auth';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+function getSchedulerHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${createServiceToken('scheduler')}`,
+  };
+}
 
 interface Employee {
   id: string;
@@ -70,7 +78,9 @@ function getLeaveServiceUrl(): string {
 
 export async function fetchActiveEmployees(): Promise<Employee[]> {
   const baseUrl = getLeaveServiceUrl();
-  const response = await fetch(`${baseUrl}/api/v1/employees/active`);
+  const response = await fetch(`${baseUrl}/api/v1/employees/active`, {
+    headers: getSchedulerHeaders(),
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to fetch active employees: ${response.status} ${response.statusText}`);
@@ -82,7 +92,9 @@ export async function fetchActiveEmployees(): Promise<Employee[]> {
 
 export async function fetchLeavePolicy(policyId: string): Promise<LeavePolicy> {
   const baseUrl = getLeaveServiceUrl();
-  const response = await fetch(`${baseUrl}/api/v1/leave-policies/${policyId}`);
+  const response = await fetch(`${baseUrl}/api/v1/leave-policies/${policyId}`, {
+    headers: getSchedulerHeaders(),
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to fetch leave policy ${policyId}: ${response.status} ${response.statusText}`);
@@ -96,7 +108,7 @@ export async function postAccrual(accrual: AccrualRequest): Promise<AccrualRespo
   const baseUrl = getLeaveServiceUrl();
   const response = await fetch(`${baseUrl}/api/v1/leave/accrual`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getSchedulerHeaders(),
     body: JSON.stringify(accrual),
   });
 

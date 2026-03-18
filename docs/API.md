@@ -69,15 +69,21 @@
 
 ### POST /messenger/call
 
-특정 사람 호출 (알림 전송 + DM 채널 준비).
+특정 사람 호출 (알림 전송 + DM 채널 준비). 서비스 토큰으로 호출 시 `caller_id` 필수.
 
 ```json
-// Request
+// Request (사용자 토큰)
 { "callee_id": "EMP-MGMT-LEADER" }
+
+// Request (서비스 토큰 — AI tool executor에서 호출 시)
+{ "callee_id": "EMP-MGMT-LEADER", "caller_id": "EMP-CEO" }
 
 // Response 200
 { "channel_id": "ch-dm-xxx", "notification_sent": true }
 ```
+
+DM 채널 생성 시 참여자 이름을 DB에서 조회하여 채널명을 자동 설정합니다 (예: "대표, 경영지원팀장").
+호출 후 `notification:new` 소켓 이벤트가 발신되어 callee에게 알림이 전달됩니다.
 
 ### POST /messenger/takeover
 
@@ -264,7 +270,7 @@ Query: `?employee_id=EMP-001&status=pending&page=1&limit=20`
 }
 ```
 
-### POST /approvals/:id/decide
+### PATCH /approvals/:id/decide
 
 ```json
 // Request
@@ -278,11 +284,11 @@ Query: `?employee_id=EMP-001&status=pending&page=1&limit=20`
 {
   "approval_id": "APR-2026-0031",
   "status": "approved",
-  "leave_request_updated": true,
-  "balance_updated": true,
-  "notifications_sent_to": ["EMP-001", "EMP-HR-001", "EMP-MGMT-LEADER"]
+  "completed_at": "2026-03-18T10:30:00Z"
 }
 ```
+
+결재 완료 후 approval-service가 messaging-server API를 호출하여 신청자(`requested_by`)의 알림 채널(`ch-notification-{userId}`)에 결과 메시지를 자동 전송합니다.
 
 ---
 

@@ -1,15 +1,15 @@
-export { teams } from './teams.js';
-export { employees } from './employees.js';
-export { userLlmConfigs } from './user-llm-configs.js';
-export { leavePolicies } from './leave-policies.js';
-export { leaveBalances } from './leave-balances.js';
-export { leaveRequests } from './leave-requests.js';
-export { approvals } from './approvals.js';
-export { holidays } from './holidays.js';
-export { channels } from './channels.js';
-export { messages } from './messages.js';
-export { auditLog } from './audit-log.js';
-export { leaveAccrualLog } from './leave-accrual-log.js';
+export { teams } from './teams';
+export { employees } from './employees';
+export { userLlmConfigs } from './user-llm-configs';
+export { leavePolicies } from './leave-policies';
+export { leaveBalances } from './leave-balances';
+export { leaveRequests } from './leave-requests';
+export { approvals } from './approvals';
+export { holidays } from './holidays';
+export { channels } from './channels';
+export { messages } from './messages';
+export { auditLog } from './audit-log';
+export { leaveAccrualLog } from './leave-accrual-log';
 
 export {
   teamsRelations,
@@ -21,4 +21,4 @@ export {
   channelsRelations,
   messagesRelations,
   leaveAccrualLogRelations,
-} from './relations.js';
+} from './relations';

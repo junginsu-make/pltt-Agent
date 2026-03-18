@@ -8,8 +8,16 @@
 // by default), the system auto-approves the leave request.
 
 import type { JobDefinition } from './job-runner.js';
+import { createServiceToken } from '@palette/shared/middleware/service-auth';
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
+
+function getSchedulerHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${createServiceToken('scheduler')}`,
+  };
+}
 
 interface ExpiredApproval {
   id: string;
@@ -40,7 +48,9 @@ function getApprovalServiceUrl(): string {
 
 export async function fetchExpiredApprovals(): Promise<ExpiredApproval[]> {
   const baseUrl = getApprovalServiceUrl();
-  const response = await fetch(`${baseUrl}/api/v1/approvals/expired`);
+  const response = await fetch(`${baseUrl}/api/v1/approvals/expired`, {
+    headers: getSchedulerHeaders(),
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to fetch expired approvals: ${response.status} ${response.statusText}`);
@@ -54,7 +64,7 @@ export async function autoApprove(approvalId: string): Promise<ApprovalServiceRe
   const baseUrl = getApprovalServiceUrl();
   const response = await fetch(`${baseUrl}/api/v1/approvals/${approvalId}/decide`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getSchedulerHeaders(),
     body: JSON.stringify({
       decision: 'approved',
       decided_by: 'system',

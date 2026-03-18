@@ -23,19 +23,40 @@ const APPROVAL_API = 'http://localhost:3002/api/v1';
 // Helper: 메시지 전송 후 AI 응답 대기
 // ─────────────────────────────────────────────────────────
 
+async function navigateToWorkChannel(page: Page): Promise<void> {
+  // Click the first work channel in sidebar
+  const workGroup = page.locator('[data-testid="channel-group-work"]');
+  const visible = await workGroup.isVisible().catch(() => false);
+  if (visible) {
+    const channel = workGroup.locator('[data-testid="channel-item"]').first();
+    if (await channel.isVisible().catch(() => false)) {
+      await channel.click();
+    }
+  }
+  await page.locator('[data-testid="message-input"]').waitFor({ state: 'visible', timeout: 10000 });
+}
+
 async function sendMessageAndWaitForReply(
   page: Page,
   message: string,
   timeoutMs = 15000,
 ): Promise<string> {
-  const chatInput = page.locator('[data-testid="chat-input"], textarea, input[type="text"]').last();
+  // Ensure we're in a channel with message input
+  const inputVisible = await page.locator('[data-testid="message-input"]').isVisible().catch(() => false);
+  if (!inputVisible) {
+    await navigateToWorkChannel(page);
+  }
+
+  const chatInput = page.locator('[data-testid="message-input"]');
   await chatInput.fill(message);
   await chatInput.press('Enter');
 
-  // AI 응답 메시지가 나타날 때까지 대기
-  const aiMessage = page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last();
-  await aiMessage.waitFor({ state: 'visible', timeout: timeoutMs });
-  return aiMessage.textContent() as Promise<string>;
+  // AI 응답: text-bubble or card-message
+  const messageList = page.locator('[data-testid="message-list"]');
+  const aiBubble = messageList.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last();
+  await aiBubble.waitFor({ state: 'visible', timeout: timeoutMs });
+  await page.waitForTimeout(1000);
+  return aiBubble.textContent() as Promise<string>;
 }
 
 async function getAuthToken(request: APIRequestContext, email: string, password: string): Promise<string> {
@@ -61,11 +82,11 @@ test.describe('휴가 신청 검증 (E-01 ~ E-08)', () => {
 
     // 잔여 0일이면 신청 차단 메시지가 와야 함
     // API 레벨 검증: leave/balance 조회 후 remaining=0이면 LV_001
-    await expect(page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last())
+    await expect(page.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last())
       .toContainText(/연차.*모두 사용|잔여.*0일|연차가 부족/);
 
     // 병가/특별휴가 안내가 포함되어야 함
-    await expect(page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last())
+    await expect(page.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last())
       .toContainText(/병가|특별휴가/);
   });
 
@@ -107,7 +128,7 @@ test.describe('휴가 신청 검증 (E-01 ~ E-08)', () => {
     const reply = await sendMessageAndWaitForReply(page, '10일 연속 휴가 쓸래');
 
     // 잔여 부족 안내 + 조정 제안
-    await expect(page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last())
+    await expect(page.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last())
       .toContainText(/잔여.*연차|어려워요|부족|조정/);
   });
 
@@ -142,7 +163,7 @@ test.describe('휴가 신청 검증 (E-01 ~ E-08)', () => {
     const reply = await sendMessageAndWaitForReply(page, '3월 18일에 휴가 쓰고 싶어');
 
     // 중복이면 기존 건 안내 메시지
-    const messageLocator = page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last();
+    const messageLocator = page.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last();
     const text = await messageLocator.textContent();
 
     // 중복 신청이면 LV-번호와 상태가 안내되어야 함
@@ -189,7 +210,7 @@ test.describe('휴가 신청 검증 (E-01 ~ E-08)', () => {
     const reply = await sendMessageAndWaitForReply(page, '1월 5일에 휴가 쓰고 싶어');
 
     // 과거 날짜 차단 메시지
-    await expect(page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last())
+    await expect(page.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last())
       .toContainText(/지난 날짜|과거.*날짜|이후.*알려주세요|신청 불가/);
   });
 
@@ -223,7 +244,7 @@ test.describe('휴가 신청 검증 (E-01 ~ E-08)', () => {
     const reply = await sendMessageAndWaitForReply(page, '12월 25일에 휴가 쓰고 싶어');
 
     // 먼 미래 확인 메시지
-    await expect(page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last())
+    await expect(page.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last())
       .toContainText(/먼 미래|맞으시죠|확인|공휴일/);
   });
 
@@ -234,7 +255,7 @@ test.describe('휴가 신청 검증 (E-01 ~ E-08)', () => {
     const reply = await sendMessageAndWaitForReply(page, '휴가 쓰고 싶어');
 
     // 팀원 충돌 경고가 있으면 확인
-    const messageLocator = page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last();
+    const messageLocator = page.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last();
     const text = await messageLocator.textContent();
 
     if (text && /팀원/.test(text)) {
@@ -268,7 +289,7 @@ test.describe('휴가 신청 검증 (E-01 ~ E-08)', () => {
     const reply = await sendMessageAndWaitForReply(page, '내일 반차 쓸래');
 
     // 오전/오후 선택 요청
-    await expect(page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last())
+    await expect(page.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last())
       .toContainText(/오전.*오후|반차.*선택|09.*13.*14.*18/);
   });
 
@@ -279,7 +300,7 @@ test.describe('휴가 신청 검증 (E-01 ~ E-08)', () => {
     const reply = await sendMessageAndWaitForReply(page, '3월 20일부터 23일까지 휴가 쓸래');
 
     // 주말 제외 안내
-    await expect(page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last())
+    await expect(page.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last())
       .toContainText(/주말.*제외|평일.*일|금.*월/);
   });
 
@@ -385,8 +406,8 @@ test.describe('결재 흐름 검증 (E-09 ~ E-13)', () => {
     await loginAs(page, EMPLOYEE.email, EMPLOYEE.password);
 
     // 반려 알림이 온 경우 확인
-    const notification = page.locator('[data-testid="notification"], [data-testid="message-system"]');
-    const messages = page.locator('[data-testid="message-llm"], [data-sender-type="llm"]');
+    const notification = page.locator('[data-testid="notification"], [data-testid="system-notification"]');
+    const messages = page.locator('[data-testid="text-bubble"], [data-testid="card-message"]');
 
     // 반려 메시지가 있으면 사유와 날짜 변경 제안이 포함되어야 함
     const allMessages = await messages.allTextContents();
@@ -556,7 +577,7 @@ test.describe('결재 흐름 검증 (E-09 ~ E-13)', () => {
 
     const reply = await sendMessageAndWaitForReply(page, '아까 휴가 취소할래');
 
-    const messageLocator = page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last();
+    const messageLocator = page.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last();
     const text = await messageLocator.textContent();
 
     // 취소 가능한 건이 있으면 취소 처리, 없으면 없다는 안내
@@ -571,7 +592,7 @@ test.describe('결재 흐름 검증 (E-09 ~ E-13)', () => {
     // 이미 승인된 건의 취소 시도
     const reply = await sendMessageAndWaitForReply(page, '승인된 휴가 취소하고 싶어');
 
-    const messageLocator = page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last();
+    const messageLocator = page.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last();
     const text = await messageLocator.textContent();
 
     if (text) {
@@ -630,7 +651,7 @@ test.describe('시스템 복원력 검증 (E-14 ~ E-18)', () => {
     const reply = await sendMessageAndWaitForReply(page, '휴가 남은 거 알려줘', 30000);
 
     // SYS_001 에러 시 사용자 안내 메시지
-    await expect(page.locator('[data-testid="message-llm"], [data-sender-type="llm"], [data-testid="message-system"]').last())
+    await expect(page.locator('[data-testid="text-bubble"], [data-testid="card-message"], [data-testid="system-notification"]').last())
       .toContainText(/일시적.*응답.*어려|잠시 후.*다시|재시도/);
   });
 
@@ -665,7 +686,7 @@ test.describe('시스템 복원력 검증 (E-14 ~ E-18)', () => {
 
     const reply = await sendMessageAndWaitForReply(page, '연차 며칠 남았어?');
 
-    const messageLocator = page.locator('[data-testid="message-llm"], [data-sender-type="llm"]').last();
+    const messageLocator = page.locator('[data-testid="text-bubble"], [data-testid="card-message"]').last();
     const text = await messageLocator.textContent() ?? '';
 
     // 숫자가 포함된 응답이면 DB의 실제 값과 일치해야 함
@@ -687,7 +708,7 @@ test.describe('시스템 복원력 검증 (E-14 ~ E-18)', () => {
     const reply = await sendMessageAndWaitForReply(page, '휴가 조회해줘');
 
     // DB 장애 시 안내 메시지
-    await expect(page.locator('[data-testid="message-system"], [data-testid="error-message"]').last())
+    await expect(page.locator('[data-testid="system-notification"], [data-testid="error-message"]').last())
       .toContainText(/시스템 점검|잠시 후/);
   });
 

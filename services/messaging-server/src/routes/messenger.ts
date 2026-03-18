@@ -3,6 +3,7 @@ import { z } from 'zod';
 import * as channelService from '../services/channel-service.js';
 import * as messageService from '../services/message-service.js';
 import { routeMessage } from '../router.js';
+import { getIO } from '../socket/index.js';
 import type { JwtPayload } from '../lib/jwt.js';
 
 type Env = {
@@ -19,6 +20,7 @@ const sendSchema = z.object({
   channel_id: z.string().min(1),
   content: z.string().min(1),
   content_type: z.enum(['text', 'card', 'approval', 'notification']).default('text'),
+  card_data: z.record(z.unknown()).optional(),
 });
 
 messenger.post('/send', async (c) => {
@@ -42,7 +44,7 @@ messenger.post('/send', async (c) => {
     );
   }
 
-  const { channel_id, content, content_type } = parsed.data;
+  const { channel_id, content, content_type, card_data } = parsed.data;
 
   // Verify channel exists
   const channel = await channelService.getChannelById(channel_id);
@@ -50,14 +52,16 @@ messenger.post('/send', async (c) => {
     return c.json({ error: { code: 'NOT_FOUND', message: '채널을 찾을 수 없습니다' } }, 404);
   }
 
-  // Save message
+  // Save message (approval/notification types use 'llm' sender for card rendering)
+  const senderType = (content_type === 'approval' || content_type === 'notification') ? 'llm' : 'human';
   const message = await messageService.saveMessage({
     channelId: channel_id,
-    senderType: 'human',
-    senderUserId: user.employeeId,
-    displayName: user.name,
+    senderType,
+    senderUserId: senderType === 'llm' ? 'system' : user.employeeId,
+    displayName: senderType === 'llm' ? '결재 알림' : user.name,
     contentType: content_type,
     contentText: content,
+    cardData: card_data,
   });
 
   // Route message
@@ -135,10 +139,11 @@ messenger.post('/dm', async (c) => {
 
 const callSchema = z.object({
   callee_id: z.string().min(1),
+  caller_id: z.string().min(1).optional(),
 });
 
 messenger.post('/call', async (c) => {
-  const user = c.get('user');
+  const user = c.get('user') as JwtPayload | undefined;
   const body = await c.req.json();
   const parsed = callSchema.safeParse(body);
 
@@ -154,13 +159,27 @@ messenger.post('/call', async (c) => {
     );
   }
 
-  const { callee_id } = parsed.data;
+  const { callee_id, caller_id } = parsed.data;
+  const callerId = user?.employeeId ?? caller_id ?? 'system';
+  const callerName = user?.name ?? callerId;
 
   // Get or create DM channel for call
   const { channel } = await channelService.getOrCreateDmChannel(
-    user.employeeId,
+    callerId,
     callee_id
   );
+
+  // Notify callee via socket
+  const io = getIO();
+  if (io) {
+    io.emit('notification:new', {
+      targetUserId: callee_id,
+      type: 'call',
+      callerName,
+      callerUserId: callerId,
+      channelId: channel.id,
+    });
+  }
 
   return c.json({
     channel_id: channel.id,
@@ -205,6 +224,16 @@ messenger.post('/takeover', async (c) => {
 
   if (!updated) {
     return c.json({ error: { code: 'NOT_FOUND', message: '채널을 찾을 수 없습니다' } }, 404);
+  }
+
+  // Emit socket event so all clients in the channel update their UI
+  const io = getIO();
+  if (io) {
+    io.to(channel_id).emit('channel:takeover', {
+      channelId: channel_id,
+      humanTakeover: updated.humanTakeover,
+      takenOverBy: updated.takeoverBy,
+    });
   }
 
   return c.json({
