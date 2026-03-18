@@ -138,33 +138,35 @@ function routeMessage(message: IncomingMessage, channel: Channel): RouteDecision
    - channel.human_takeover = false
    - LLM 자동 응답 재개
 
-### WebSocket 이벤트
+### WebSocket 이벤트 (구현 완료)
 
 ```typescript
 // messaging-server WebSocket 이벤트 목록
 
 // 서버 → 클라이언트
-'message:new'          // 새 메시지 도착
-'message:typing'       // 누군가 타이핑 중 (사람 또는 LLM)
-'channel:created'      // 새 채널 생성됨
-'channel:takeover'     // 담당자가 개입함 (LLM 중지)
-'channel:released'     // 담당자가 AI에게 넘김 (LLM 재개)
-'approval:new'         // 새 결재 요청 도착
-'approval:decided'     // 결재 결과 (승인/반려)
-'notification:new'     // 시스템 알림
-'user:online'          // 사용자 온라인
-'user:offline'         // 사용자 오프라인
+'message:new'          // ✅ 새 메시지 도착
+'typing:start'         // ✅ 누군가 타이핑 시작
+'typing:stop'          // ✅ 누군가 타이핑 종료
+'channel:takeover'     // ✅ 담당자가 개입함 (LLM 중지) — POST /takeover 후 자동 발신
+'approval:decided'     // ✅ 결재 결과 (승인/반려)
+'notification:new'     // ✅ 시스템 알림 (DM 호출 시 발신, 채널 목록 리프레시 트리거)
+'user:online'          // ✅ 사용자 온라인
+'user:offline'         // ✅ 사용자 오프라인
 
 // 클라이언트 → 서버
-'message:send'         // 메시지 전송
-'message:read'         // 메시지 읽음 처리
-'channel:join'         // 채널 참여
-'channel:leave'        // 채널 퇴장
-'takeover:start'       // 담당자 개입 시작
-'takeover:end'         // 담당자 AI에게 넘기기
-'typing:start'         // 타이핑 시작
-'typing:stop'          // 타이핑 종료
+'message:send'         // ✅ 메시지 전송
+'message:read'         // ✅ 메시지 읽음 처리
+'channel:join'         // ✅ 채널 참여
+'channel:leave'        // ✅ 채널 퇴장
+'typing:start'         // ✅ 타이핑 시작
+'typing:stop'          // ✅ 타이핑 종료
 ```
+
+### 구현 세부사항
+
+- **channel:takeover**: `POST /messenger/takeover` 후 `io.to(channel_id).emit('channel:takeover', { channelId, humanTakeover, takenOverBy })` 자동 발신. 프론트엔드에서 `updateChannel`로 UI 즉시 반영.
+- **notification:new**: `POST /messenger/call` 후 `io.emit('notification:new', { targetUserId, type, callerName, channelId })` 발신. 프론트엔드에서 채널 목록 API 재호출하여 새 DM 채널 표시.
+- **승인 결과 알림**: `PATCH /approvals/:id/decide` 후 approval-service가 messaging-server API를 호출하여 신청자의 알림 채널에 notification 메시지 전송.
 
 ## 서비스 간 통신
 

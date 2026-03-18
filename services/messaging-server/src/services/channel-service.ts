@@ -1,5 +1,5 @@
-import { db, channels, messages } from '@palette/db';
-import { eq, sql, desc, and } from 'drizzle-orm';
+import { db, channels, messages, employees } from '@palette/db';
+import { eq, sql, desc, and, inArray } from 'drizzle-orm';
 import { generateChannelId } from '@palette/shared';
 
 export async function getChannelsByParticipant(userId: string) {
@@ -61,11 +61,21 @@ export async function getOrCreateDmChannel(userId1: string, userId2: string) {
     return { channel: existingChannels[0], created: false };
   }
 
+  // Look up participant names for channel display
+  const participantNames = await db
+    .select({ id: employees.id, name: employees.name })
+    .from(employees)
+    .where(inArray(employees.id, [userId1, userId2]));
+
+  const nameMap = new Map(participantNames.map((p) => [p.id, p.name]));
+  const name1 = nameMap.get(userId1) ?? userId1;
+  const name2 = nameMap.get(userId2) ?? userId2;
+
   // Create new DM channel
   const newChannel = {
     id: generateChannelId(),
     type: 'direct' as const,
-    name: null,
+    name: `${name1}, ${name2}`,
     participants: [userId1, userId2],
     workDomain: null,
     assignedLlm: null,

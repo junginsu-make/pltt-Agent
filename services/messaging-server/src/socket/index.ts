@@ -46,7 +46,8 @@ async function callAiRuntime(
     });
 
     if (!res.ok) {
-      console.error(`[socket] AI runtime error: ${res.status}`);
+      const errBody = await res.text().catch(() => '');
+      console.error(`[socket] AI runtime error: ${res.status} ${errBody}`);
       return;
     }
 
@@ -170,6 +171,7 @@ export function initSocketServer(io: Server): void {
           humanTakeover: channel.humanTakeover ?? false,
           assignedLlm: channel.assignedLlm,
         });
+
 
         // Broadcast to all members in the channel room
         io.to(data.channelId).emit('message:new', {

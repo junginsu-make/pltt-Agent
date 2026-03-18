@@ -87,7 +87,7 @@ export async function executeTool(
       case 'reject_request':
         return await decideApproval(input.approval_id as string, 'rejected', input.comment as string);
       case 'call_person':
-        return await callPerson(input.callee_id as string);
+        return await callPerson(input.callee_id as string, _senderUserId);
       case 'query_employee_schedule':
         return await queryEmployeeSchedule(input.employee_id as string);
       case 'get_team_summary':
@@ -255,11 +255,11 @@ async function getTeamSummary(teamId: string): Promise<ToolResult> {
   return { success: true, data: await res.json() };
 }
 
-async function callPerson(calleeId: string): Promise<ToolResult> {
+async function callPerson(calleeId: string, callerUserId?: string): Promise<ToolResult> {
   const res = await fetch(`${MESSAGING_SERVICE_URL}/messenger/call`, {
     method: 'POST',
     headers: getServiceHeaders(),
-    body: JSON.stringify({ callee_id: calleeId }),
+    body: JSON.stringify({ callee_id: calleeId, caller_id: callerUserId }),
   });
   if (!res.ok) return { success: false, error: `Call failed: ${res.status}` };
   return { success: true, data: await res.json() };

@@ -207,62 +207,11 @@ user_llm_configs.llm_role = 'work_assistant'
 - 과거 날짜: "이미 지난 날짜예요 😅 오늘 이후로 알려주세요!"
 ```
 
-Tools:
-```json
-[
-  {
-    "name": "query_leave_balance",
-    "description": "직원의 연차 잔여 일수를 조회합니다.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "employee_id": { "type": "string" }
-      },
-      "required": ["employee_id"]
-    }
-  },
-  {
-    "name": "validate_date",
-    "description": "휴가 날짜가 유효한지 검증합니다 (주말, 공휴일, 팀 충돌 확인).",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "employee_id": { "type": "string" },
-        "date": { "type": "string", "description": "YYYY-MM-DD" },
-        "leave_type": { "type": "string", "default": "annual" }
-      },
-      "required": ["employee_id", "date"]
-    }
-  },
-  {
-    "name": "submit_leave_request",
-    "description": "휴가를 신청합니다. 반드시 직원의 확인을 받은 후에만 호출하세요.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "employee_id": { "type": "string" },
-        "leave_type": { "type": "string" },
-        "start_date": { "type": "string" },
-        "end_date": { "type": "string" },
-        "days": { "type": "number" },
-        "reason": { "type": "string" }
-      },
-      "required": ["employee_id", "start_date", "end_date", "days"]
-    }
-  },
-  {
-    "name": "search_policy",
-    "description": "연차 규정을 검색합니다.",
-    "input_schema": {
-      "type": "object",
-      "properties": {
-        "query": { "type": "string", "description": "검색 키워드 (예: '신입 연차 발생')" }
-      },
-      "required": ["query"]
-    }
-  }
-]
-```
+Tools: `query_leave_balance`, `validate_date`, `submit_leave_request`, `search_policy`, `delegate_to_agent`, `call_person`, `query_employee_schedule`
+
+> **주의**: Phase 1에서는 모든 work 채널이 EMP-HR-001 LLM을 공유합니다 (`assigned_llm: 'EMP-HR-001'`).
+> EMP-HR-001은 휴가 업무 외에도 직원 호출(`call_person`)과 일정 조회(`query_employee_schedule`)를 지원합니다.
+> 시스템 프롬프트에 직원 ID 매핑 규칙이 포함되어 있어 "경영지원팀장 호출해줘" → `call_person(callee_id: "EMP-MGMT-LEADER")`로 자동 변환됩니다.
 
 ---
 

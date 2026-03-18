@@ -3,6 +3,7 @@ import { MutableRefObject, useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useChatStore } from '@/stores/chat-store';
 import { useAuthStore } from '@/stores/auth-store';
+import api from '@/lib/api';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
 
@@ -19,6 +20,7 @@ export function useSocket(): UseSocketReturn {
   const setTyping = useChatStore((s) => s.setTyping);
   const updateChannel = useChatStore((s) => s.updateChannel);
   const setConnected = useChatStore((s) => s.setConnected);
+  const setChannels = useChatStore((s) => s.setChannels);
   const token = useAuthStore((s) => s.token);
 
   useEffect(() => {
@@ -54,10 +56,29 @@ export function useSocket(): UseSocketReturn {
       // Approval decision will appear as a new message via message:new
     });
 
+    socket.on('notification:new', async (data: {
+      targetUserId: string;
+      type: string;
+      callerName?: string;
+      channelId?: string;
+    }) => {
+      console.log('[socket] notification:new', data);
+      // Join the new channel room and refresh channel list
+      if (data.channelId) {
+        socket.emit('channel:join', { channelId: data.channelId });
+      }
+      try {
+        const res = await api.get('/messenger/channels');
+        setChannels(res.data.channels || res.data);
+      } catch {
+        /* ignore */
+      }
+    });
+
     return () => {
       socket.disconnect();
     };
-  }, [token, addMessage, setTyping, updateChannel, setConnected]);
+  }, [token, addMessage, setTyping, updateChannel, setConnected, setChannels]);
 
   const sendMessage = useCallback(
     (channelId: string, content: string) => {

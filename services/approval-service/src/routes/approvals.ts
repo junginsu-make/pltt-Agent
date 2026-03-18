@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { AppError } from '@palette/shared';
+import { createServiceToken } from '@palette/shared/middleware/service-auth';
 import { getDb } from '../db.js';
 import {
   createApproval,
@@ -10,6 +11,46 @@ import {
   getApprovalHistory,
   getExpiredApprovals,
 } from '../services/approval-service.js';
+
+function getMessagingServerUrl(): string {
+  return process.env.MESSAGING_SERVER_URL ?? 'http://localhost:3000/api/v1';
+}
+
+async function notifyRequester(
+  requestedBy: string,
+  decision: string,
+  requestSummary: string,
+  comment?: string,
+): Promise<void> {
+  try {
+    const channelId = `ch-notification-${requestedBy}`;
+    const decisionText = decision === 'approved' ? '승인' : '반려';
+    const commentText = comment ? ` (사유: ${comment})` : '';
+    const content = `휴가 신청이 ${decisionText}되었습니다. ${requestSummary}${commentText}`;
+
+    const token = createServiceToken('approval-service');
+    await fetch(`${getMessagingServerUrl()}/messenger/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        channel_id: channelId,
+        content,
+        content_type: 'notification',
+        card_data: {
+          type: 'approval_result',
+          decision,
+          summary: requestSummary,
+          comment: comment ?? null,
+        },
+      }),
+    });
+  } catch (err) {
+    console.error('[approval] Failed to notify requester:', err);
+  }
+}
 
 // ─── Validation Schemas ─────────────────────────────────────────────────────
 
@@ -167,6 +208,17 @@ approvalRoutes.patch('/:id/decide', async (c) => {
           400,
         );
     }
+  }
+
+  // Notify the requester about the decision (fire-and-forget)
+  const approval = await getApprovalById(db, id);
+  if (approval) {
+    notifyRequester(
+      approval.requested_by,
+      parsed.data.decision,
+      approval.request_summary,
+      parsed.data.comment,
+    );
   }
 
   return c.json({ data: result.data });
