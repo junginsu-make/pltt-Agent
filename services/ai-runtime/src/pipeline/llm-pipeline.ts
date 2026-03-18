@@ -61,7 +61,9 @@ export class LLMPipeline {
     const tools = getToolDefinitions(config.llmRole, (config.tools as string[]) || []);
 
     // 4. Inject sender context into system prompt
-    const senderContext = `\n\n[현재 대화 컨텍스트]\n- 메시지 발신자: ${request.senderUserId}\n- 채널: ${request.channelId}\n- 발신자의 employee_id를 tool 호출 시 자동으로 사용하세요. 사용자에게 ID를 다시 물어보지 마세요.`;
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const senderContext = `\n\n[현재 대화 컨텍스트]\n- 오늘 날짜: ${dateStr} (${today.getFullYear()}년)\n- 메시지 발신자: ${request.senderUserId}\n- 채널: ${request.channelId}\n- 발신자의 employee_id를 tool 호출 시 자동으로 사용하세요. 사용자에게 ID를 다시 물어보지 마세요.\n- 사용자가 \"3월 20일\" 같이 연도 없이 날짜를 말하면 현재 연도(${today.getFullYear()})로 해석하세요.\n- 날짜 형식은 YYYY-MM-DD를 사용하세요.`;
     const systemPrompt = config.systemPrompt + senderContext;
 
     // 5. Call LLM

@@ -18,6 +18,17 @@ async function callAiRuntime(
   senderUserId: string,
 ): Promise<void> {
   try {
+    // Build conversation history from recent messages
+    const { messages: recentMessages } = await messageService.getMessagesByChannel(channelId, { limit: 20 });
+    const conversationHistory = recentMessages
+      .reverse()
+      .filter((m) => m.senderType === 'human' || m.senderType === 'llm')
+      .slice(-20)
+      .map((m) => ({
+        role: m.senderType === 'human' ? 'user' as const : 'assistant' as const,
+        content: m.contentText ?? '',
+      }));
+
     const token = createServiceToken('messaging-server');
     const res = await fetch(`${getAiRuntimeUrl()}/runtime/chat`, {
       method: 'POST',
@@ -30,6 +41,7 @@ async function callAiRuntime(
         channel_id: channelId,
         user_message: userMessage,
         sender_user_id: senderUserId,
+        conversation_history: conversationHistory,
       }),
     });
 

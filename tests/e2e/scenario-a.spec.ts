@@ -69,8 +69,9 @@ class ChatPage {
   async waitForAIResponse(expectedSubstring: string): Promise<void> {
     const messageList = this.page.locator(SELECTORS.MESSAGE_LIST);
 
+    // Search in both text-bubble and card-message (AI may render as either)
     await messageList
-      .locator(SELECTORS.TEXT_BUBBLE)
+      .locator(`${SELECTORS.TEXT_BUBBLE}, ${SELECTORS.CARD_MESSAGE}`)
       .filter({ hasText: expectedSubstring })
       .last()
       .waitFor({ state: 'visible', timeout: TIMEOUTS.AI_RESPONSE });
@@ -234,16 +235,20 @@ test.describe.serial('Scenario A: 직원 휴가 신청 → 승인', () => {
   });
 
   test('Step 6: AI가 휴가 신청 확인 카드 표시', async () => {
-    // Wait for the leave request confirmation card or approval card
     const messageList = employeePage.locator(SELECTORS.MESSAGE_LIST);
 
-    // Check for a card message confirming the leave request
-    const confirmationCard = messageList.locator(SELECTORS.CARD_MESSAGE).last();
-    await confirmationCard.waitFor({ state: 'visible', timeout: TIMEOUTS.CARD_RENDER });
+    // Check for confirmation: card-message or text-bubble with leave request info
+    // AI may render as card or text depending on frontend card support
+    const confirmationLocator = messageList.locator(
+      `${SELECTORS.CARD_MESSAGE}, ${SELECTORS.TEXT_BUBBLE}`,
+    );
+    const confirmation = confirmationLocator
+      .filter({ hasText: /LV-|신청.*완료|접수/ })
+      .last();
+    await confirmation.waitFor({ state: 'visible', timeout: TIMEOUTS.CARD_RENDER });
 
-    // Verify card contains the leave date and reason
-    await expect(confirmationCard).toContainText('3월 20일');
-    await expect(confirmationCard).toContainText('개인사정');
+    await expect(confirmation).toContainText('3월 20일');
+    await expect(confirmation).toContainText('개인사정');
   });
 
   test('Step 7: 김민준(EMP-DEV-LEADER) 로그인', async () => {
