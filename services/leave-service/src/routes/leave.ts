@@ -7,6 +7,8 @@ import {
   getHolidays,
   getTeamSchedule,
   getLeaveRequests,
+  accrueLeave,
+  accrualInputSchema,
 } from '../services/leave-service.js';
 
 const leave = new Hono();
@@ -70,6 +72,31 @@ leave.get('/holidays', async (c) => {
   const year = Number(c.req.query('year') ?? new Date().getFullYear());
   const result = await getHolidays(year);
   return c.json({ data: result });
+});
+
+// POST /accrual
+leave.post('/accrual', async (c) => {
+  const body = await c.req.json();
+
+  const parsed = accrualInputSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: '입력값이 올바르지 않습니다',
+          details: parsed.error.errors.map((e) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          })),
+        },
+      },
+      400,
+    );
+  }
+
+  const result = await accrueLeave(parsed.data);
+  return c.json({ data: result }, 201);
 });
 
 // GET /team-schedule

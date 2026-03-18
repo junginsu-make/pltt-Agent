@@ -1,6 +1,14 @@
 import { db, employees } from '@palette/db';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { createServiceToken } from '@palette/shared/middleware/service-auth';
+
+function getServiceHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${createServiceToken('ai-runtime')}`,
+  };
+}
 
 const toolInputSchemas: Record<string, z.ZodType> = {
   query_leave_balance: z.object({ employee_id: z.string().min(1) }),
@@ -98,7 +106,9 @@ export async function executeTool(
 }
 
 async function queryLeaveBalance(employeeId: string): Promise<ToolResult> {
-  const res = await fetch(`${LEAVE_SERVICE_URL}/leave/balance/${employeeId}`);
+  const res = await fetch(`${LEAVE_SERVICE_URL}/leave/balance/${employeeId}`, {
+    headers: getServiceHeaders(),
+  });
   if (!res.ok) return { success: false, error: `Failed to query balance: ${res.status}` };
   return { success: true, data: await res.json() };
 }
@@ -106,7 +116,7 @@ async function queryLeaveBalance(employeeId: string): Promise<ToolResult> {
 async function validateDate(input: Record<string, unknown>): Promise<ToolResult> {
   const res = await fetch(`${LEAVE_SERVICE_URL}/leave/validate-date`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getServiceHeaders(),
     body: JSON.stringify(input),
   });
   if (!res.ok) return { success: false, error: `Failed to validate date: ${res.status}` };
@@ -116,7 +126,7 @@ async function validateDate(input: Record<string, unknown>): Promise<ToolResult>
 async function submitLeaveRequest(input: Record<string, unknown>): Promise<ToolResult> {
   const res = await fetch(`${LEAVE_SERVICE_URL}/leave/request`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getServiceHeaders(),
     body: JSON.stringify(input),
   });
   if (!res.ok) {
@@ -139,6 +149,7 @@ async function checkTeamSchedule(input: Record<string, unknown>): Promise<ToolRe
   const date = input.date as string;
   const res = await fetch(
     `${LEAVE_SERVICE_URL}/leave/requests?team_id=${teamId}&date=${date}&status=approved`,
+    { headers: getServiceHeaders() },
   );
   if (!res.ok) return { success: false, error: `Failed to check schedule: ${res.status}` };
   return { success: true, data: await res.json() };
@@ -151,7 +162,7 @@ async function decideApproval(
 ): Promise<ToolResult> {
   const res = await fetch(`${APPROVAL_SERVICE_URL}/approvals/${approvalId}/decide`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getServiceHeaders(),
     body: JSON.stringify({ decision, decided_by: 'system', comment }),
   });
   if (!res.ok) return { success: false, error: `Failed to decide: ${res.status}` };
@@ -161,6 +172,7 @@ async function decideApproval(
 async function queryEmployeeSchedule(employeeId: string): Promise<ToolResult> {
   const res = await fetch(
     `${LEAVE_SERVICE_URL}/leave/requests?employee_id=${employeeId}&status=approved`,
+    { headers: getServiceHeaders() },
   );
   if (!res.ok) return { success: false, error: `Failed to query schedule: ${res.status}` };
   return { success: true, data: await res.json() };
@@ -170,6 +182,7 @@ async function getTeamSummary(teamId: string): Promise<ToolResult> {
   const month = new Date().toISOString().slice(0, 7);
   const res = await fetch(
     `${LEAVE_SERVICE_URL}/leave/team-schedule?teamId=${teamId}&month=${month}`,
+    { headers: getServiceHeaders() },
   );
   if (!res.ok) return { success: false, error: `Failed to get team summary: ${res.status}` };
   return { success: true, data: await res.json() };
@@ -178,7 +191,7 @@ async function getTeamSummary(teamId: string): Promise<ToolResult> {
 async function callPerson(calleeId: string): Promise<ToolResult> {
   const res = await fetch(`${MESSAGING_SERVICE_URL}/messenger/call`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getServiceHeaders(),
     body: JSON.stringify({ callee_id: calleeId }),
   });
   if (!res.ok) return { success: false, error: `Call failed: ${res.status}` };
@@ -226,7 +239,7 @@ async function delegateToAgent(
 
     const res = await fetch(`${AI_RUNTIME_URL}/runtime/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getServiceHeaders(),
       body: JSON.stringify({
         llm_user_id: targetUserId,
         channel_id: currentCtx.originChannelId,
@@ -272,7 +285,7 @@ async function inviteAgentToChannel(input: Record<string, unknown>): Promise<Too
 
   const res = await fetch(`${MESSAGING_SERVICE_URL}/messenger/channel/invite`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getServiceHeaders(),
     body: JSON.stringify({ channel_id: channelId, user_id: targetUserId }),
   });
 

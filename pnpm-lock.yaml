@@ -183,13 +183,22 @@ importers:
 
   packages/shared:
     dependencies:
+      jsonwebtoken:
+        specifier: ^9.0.0
+        version: 9.0.3
       zod:
         specifier: ^3.24.0
         version: 3.25.76
     devDependencies:
+      '@types/jsonwebtoken':
+        specifier: ^9.0.0
+        version: 9.0.10
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
+      hono:
+        specifier: ^4.7.0
+        version: 4.12.8
       typescript:
         specifier: ^5.5.0
         version: 5.9.3

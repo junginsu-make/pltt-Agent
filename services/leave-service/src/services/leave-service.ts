@@ -1,7 +1,8 @@
 import { eq, and, sql, gte, lte, count, or } from 'drizzle-orm';
 import { db } from '../db.js';
-import { leaveRequests, leaveBalances, holidays, employees } from '@palette/db';
+import { leaveRequests, leaveBalances, holidays, employees, leaveAccrualLog } from '@palette/db';
 import { AppError, generateLeaveRequestId, isWeekend, formatDate } from '@palette/shared';
+import { z } from 'zod';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -213,43 +214,48 @@ export async function createLeaveRequest(input: CreateLeaveRequestInput) {
     throw new AppError('LV_003', [{ field: 'dates', message: '겹치는 휴가 신청이 있습니다' }]);
   }
 
-  // 5. Generate ID: LV-YYYY-NNNN
-  const countResult = await db
-    .select({ cnt: count() })
-    .from(leaveRequests)
-    .where(sql`EXTRACT(YEAR FROM ${leaveRequests.createdAt}) = ${year}`);
-  const seq = Number(countResult[0]?.cnt ?? 0) + 1;
-  const requestId = generateLeaveRequestId(year, seq);
+  // 5-7: Atomic transaction for ID generation + INSERT + balance UPDATE
+  const created = await db.transaction(async (tx) => {
+    // 5. Generate ID: LV-YYYY-NNNN
+    const countResult = await tx
+      .select({ cnt: count() })
+      .from(leaveRequests)
+      .where(sql`EXTRACT(YEAR FROM ${leaveRequests.createdAt}) = ${year}`);
+    const seq = Number(countResult[0]?.cnt ?? 0) + 1;
+    const requestId = generateLeaveRequestId(year, seq);
 
-  // 6. INSERT leave_request
-  const [created] = await db
-    .insert(leaveRequests)
-    .values({
-      id: requestId,
-      employeeId: employee_id,
-      leaveType: leave_type,
-      startDate: start_date,
-      endDate: end_date,
-      days: String(days),
-      reason: reason ?? null,
-      status: 'pending',
-      conversationId: conversation_id ?? null,
-    })
-    .returning();
+    // 6. INSERT leave_request
+    const [inserted] = await tx
+      .insert(leaveRequests)
+      .values({
+        id: requestId,
+        employeeId: employee_id,
+        leaveType: leave_type,
+        startDate: start_date,
+        endDate: end_date,
+        days: String(days),
+        reason: reason ?? null,
+        status: 'pending',
+        conversationId: conversation_id ?? null,
+      })
+      .returning();
 
-  // 7. UPDATE leave_balances.pending_days += days
-  await db
-    .update(leaveBalances)
-    .set({
-      pendingDays: sql`${leaveBalances.pendingDays} + ${days}`,
-    })
-    .where(
-      and(
-        eq(leaveBalances.employeeId, employee_id),
-        eq(leaveBalances.year, year),
-        eq(leaveBalances.leaveType, leave_type),
-      ),
-    );
+    // 7. UPDATE leave_balances.pending_days += days
+    await tx
+      .update(leaveBalances)
+      .set({
+        pendingDays: sql`${leaveBalances.pendingDays} + ${days}`,
+      })
+      .where(
+        and(
+          eq(leaveBalances.employeeId, employee_id),
+          eq(leaveBalances.year, year),
+          eq(leaveBalances.leaveType, leave_type),
+        ),
+      );
+
+    return inserted;
+  });
 
   // 8. Find employee's manager
   const manager = emp[0].managerId
@@ -294,26 +300,28 @@ export async function cancelLeaveRequest(requestId: string) {
     throw new AppError('LV_005', [{ field: 'status', message: `현재 상태: ${request.status}` }]);
   }
 
-  // Update status to cancelled
-  await db
-    .update(leaveRequests)
-    .set({ status: 'cancelled', updatedAt: new Date() })
-    .where(eq(leaveRequests.id, requestId));
-
-  // Reduce pending_days
+  // Atomic: cancel request + reduce pending_days
   const year = new Date(request.startDate).getFullYear();
-  await db
-    .update(leaveBalances)
-    .set({
-      pendingDays: sql`GREATEST(${leaveBalances.pendingDays} - ${Number(request.days)}, 0)`,
-    })
-    .where(
-      and(
-        eq(leaveBalances.employeeId, request.employeeId),
-        eq(leaveBalances.year, year),
-        eq(leaveBalances.leaveType, request.leaveType),
-      ),
-    );
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(leaveRequests)
+      .set({ status: 'cancelled', updatedAt: new Date() })
+      .where(eq(leaveRequests.id, requestId));
+
+    await tx
+      .update(leaveBalances)
+      .set({
+        pendingDays: sql`GREATEST(${leaveBalances.pendingDays} - ${Number(request.days)}, 0)`,
+      })
+      .where(
+        and(
+          eq(leaveBalances.employeeId, request.employeeId),
+          eq(leaveBalances.year, year),
+          eq(leaveBalances.leaveType, request.leaveType),
+        ),
+      );
+  });
 
   return { id: requestId, status: 'cancelled' };
 }
@@ -450,6 +458,92 @@ export async function getTeamSchedule(teamId: string, month: string): Promise<Te
       end_date: r.endDate,
       days: Number(r.days),
       status: r.status ?? 'pending',
+    };
+  });
+}
+
+// ─── Accrue Leave ──────────────────────────────────────────────────────────
+
+export const accrualInputSchema = z.object({
+  employee_id: z.string().min(1, 'employee_id는 필수입니다'),
+  accrual_type: z.string().min(1, 'accrual_type은 필수입니다'),
+  days: z.number().positive('days는 양수여야 합니다'),
+  reason: z.string().min(1, 'reason은 필수입니다'),
+});
+
+export type AccrualInput = z.infer<typeof accrualInputSchema>;
+
+export async function accrueLeave(input: AccrualInput) {
+  const { employee_id, accrual_type, days, reason } = input;
+  const year = new Date().getFullYear();
+
+  return await db.transaction(async (tx) => {
+    // Ensure a balance row exists for this year
+    const balanceRows = await tx
+      .select()
+      .from(leaveBalances)
+      .where(
+        and(
+          eq(leaveBalances.employeeId, employee_id),
+          eq(leaveBalances.year, year),
+          eq(leaveBalances.leaveType, 'annual'),
+        ),
+      );
+
+    if (balanceRows.length === 0) {
+      // Create initial balance row
+      await tx.insert(leaveBalances).values({
+        employeeId: employee_id,
+        year,
+        leaveType: 'annual',
+        totalDays: String(days),
+        usedDays: '0',
+        pendingDays: '0',
+      });
+    } else {
+      // Increment totalDays
+      await tx
+        .update(leaveBalances)
+        .set({
+          totalDays: sql`${leaveBalances.totalDays} + ${days}`,
+        })
+        .where(
+          and(
+            eq(leaveBalances.employeeId, employee_id),
+            eq(leaveBalances.year, year),
+            eq(leaveBalances.leaveType, 'annual'),
+          ),
+        );
+    }
+
+    // Get updated balance
+    const updatedBalance = await tx
+      .select()
+      .from(leaveBalances)
+      .where(
+        and(
+          eq(leaveBalances.employeeId, employee_id),
+          eq(leaveBalances.year, year),
+          eq(leaveBalances.leaveType, 'annual'),
+        ),
+      );
+
+    const balanceAfter = Number(updatedBalance[0]?.totalDays ?? 0);
+
+    // Insert accrual log
+    await tx.insert(leaveAccrualLog).values({
+      employeeId: employee_id,
+      accrualType: accrual_type,
+      days: String(days),
+      reason,
+      balanceAfter: String(balanceAfter),
+      createdBy: 'system',
+    });
+
+    return {
+      employee_id,
+      days_added: days,
+      balance_after: balanceAfter,
     };
   });
 }

@@ -185,6 +185,11 @@ messenger-frontend ←WebSocket→ messaging-server
 - 모든 서비스 → PostgreSQL: Drizzle ORM
 - messaging-server ↔ Redis: 세션, 온라인 상태, Pub/Sub
 
+> **⚠ notification-service 제한사항 (MVP)**
+> notification-service는 현재 in-memory 저장소를 사용합니다.
+> 서버 재시작 시 모든 알림 데이터가 유실됩니다.
+> Production 전환 시 PostgreSQL 또는 Redis 기반 영속 저장소로 교체 필요.
+
 ### 캘린더 연동
 
 휴가가 승인되면 leave-service가 캘린더에 자동 등록합니다.

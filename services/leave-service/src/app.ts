@@ -1,8 +1,11 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { rateLimiter } from '@palette/shared/middleware/rate-limiter.js';
+import { rateLimiter } from '@palette/shared/middleware/rate-limiter';
+import { serviceAuthMiddleware } from '@palette/shared/middleware/service-auth';
 import leaveRoutes from './routes/leave.js';
+import employeeRoutes from './routes/employees.js';
+import leavePolicyRoutes from './routes/leave-policies.js';
 
 const app = new Hono();
 
@@ -14,7 +17,11 @@ app.use('*', rateLimiter());
 
 app.get('/health', (c) => c.json({ status: 'ok', service: 'leave-service' }));
 
+app.use('/api/v1/*', serviceAuthMiddleware());
+
 app.route('/api/v1/leave', leaveRoutes);
+app.route('/api/v1/employees', employeeRoutes);
+app.route('/api/v1/leave-policies', leavePolicyRoutes);
 
 // Global error handler using Hono's onError
 app.onError((err, c) => {

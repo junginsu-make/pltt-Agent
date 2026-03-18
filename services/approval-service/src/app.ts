@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { rateLimiter } from '@palette/shared/middleware/rate-limiter.js';
+import { rateLimiter } from '@palette/shared/middleware/rate-limiter';
+import { serviceAuthMiddleware } from '@palette/shared/middleware/service-auth';
 import approvalRoutes from './routes/approvals.js';
 import { errorHandler } from './middleware/error-handler.js';
 
@@ -14,6 +15,8 @@ app.use('*', cors({
 app.use('*', rateLimiter());
 
 app.get('/health', (c) => c.json({ status: 'ok', service: 'approval-service' }));
+
+app.use('/api/v1/*', serviceAuthMiddleware());
 
 // Mount approval routes
 app.route('/api/v1/approvals', approvalRoutes);

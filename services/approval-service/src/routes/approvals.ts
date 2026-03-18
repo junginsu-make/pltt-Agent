@@ -8,6 +8,7 @@ import {
   getPendingApprovals,
   decideApproval,
   getApprovalHistory,
+  getExpiredApprovals,
 } from '../services/approval-service.js';
 
 // ─── Validation Schemas ─────────────────────────────────────────────────────
@@ -65,6 +66,13 @@ approvalRoutes.post('/', async (c) => {
   });
 
   return c.json({ data: result }, 201);
+});
+
+// GET /api/v1/approvals/expired - Get expired (auto-approvable) approvals
+approvalRoutes.get('/expired', async (c) => {
+  const db = getDb();
+  const results = await getExpiredApprovals(db);
+  return c.json({ data: { approvals: results } });
 });
 
 // GET /api/v1/approvals/pending/:approverId - Get pending approvals
