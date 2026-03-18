@@ -60,14 +60,18 @@ export class LLMPipeline {
     // 4. Get tools for this role
     const tools = getToolDefinitions(config.llmRole, (config.tools as string[]) || []);
 
-    // 4. Call LLM
+    // 4. Inject sender context into system prompt
+    const senderContext = `\n\n[현재 대화 컨텍스트]\n- 메시지 발신자: ${request.senderUserId}\n- 채널: ${request.channelId}\n- 발신자의 employee_id를 tool 호출 시 자동으로 사용하세요. 사용자에게 ID를 다시 물어보지 마세요.`;
+    const systemPrompt = config.systemPrompt + senderContext;
+
+    // 5. Call LLM
     const totalUsage = { inputTokens: 0, outputTokens: 0 };
     const allToolCalls: Array<{ name: string; input: Record<string, unknown> }> = [];
     const allToolResults: Array<{ toolName: string; result: unknown }> = [];
 
     let response = await this.adapter.chat({
       model: config.llmModel || 'claude-haiku-4-5-20251001',
-      systemPrompt: config.systemPrompt,
+      systemPrompt,
       messages,
       tools: tools.length > 0 ? tools : undefined,
       maxTokens: 1024,
@@ -104,7 +108,7 @@ export class LLMPipeline {
       // Re-call LLM with tool results
       response = await this.adapter.chat({
         model: config.llmModel || 'claude-haiku-4-5-20251001',
-        systemPrompt: config.systemPrompt,
+        systemPrompt,
         messages,
         tools: tools.length > 0 ? tools : undefined,
         maxTokens: 1024,

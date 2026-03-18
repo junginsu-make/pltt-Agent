@@ -16,7 +16,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'pnpm --filter @palette/messenger dev',
-      url: 'http://localhost:3010',
+      url: 'http://localhost:3010/login',
       reuseExistingServer: true,
     },
   ],

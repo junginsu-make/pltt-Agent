@@ -5,12 +5,16 @@ interface LeaveBalanceCardProps {
 }
 
 export default function LeaveBalanceCard({ data }: LeaveBalanceCardProps) {
-  const total = (data.totalDays as number) || 0;
-  const used = (data.usedDays as number) || 0;
-  const pending = (data.pendingDays as number) || 0;
+  // Support both flat (camelCase) and nested API format (snake_case balances array)
+  const balances = data.balances as Array<Record<string, unknown>> | undefined;
+  const balance = balances?.[0];
+
+  const total = (balance?.total_days as number) ?? (data.totalDays as number) ?? 0;
+  const used = (balance?.used_days as number) ?? (data.usedDays as number) ?? 0;
+  const pending = (balance?.pending_days as number) ?? (data.pendingDays as number) ?? 0;
   const remaining = total - used - pending;
   const usagePercent = total > 0 ? ((used + pending) / total) * 100 : 0;
-  const expiryDate = data.expiryDate as string | undefined;
+  const expiryDate = (balance?.expires_at as string) ?? (data.expiryDate as string) ?? undefined;
 
   return (
     <div data-testid="leave-balance-card" className="w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
