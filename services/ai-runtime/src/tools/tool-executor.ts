@@ -179,9 +179,9 @@ async function submitLeaveRequest(input: Record<string, unknown>): Promise<ToolR
         await db.insert(messagesTable).values({
           id: generateMessageId(),
           channelId: notificationChannelId,
-          senderType: 'system',
+          senderType: 'llm',
           senderUserId: 'system',
-          displayName: '시스템 알림',
+          displayName: '결재 알림',
           contentType: 'approval',
           contentText: `${employeeName}님이 ${req.start_date} ~ ${req.end_date} (${req.days}일) 연차를 신청했습니다. 사유: ${req.reason ?? ''}`,
           cardData: {

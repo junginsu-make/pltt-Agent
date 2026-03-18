@@ -1,3 +1,5 @@
+import { config } from "dotenv";
+config({ path: new URL("../../../.env", import.meta.url).pathname });
 import { serve } from '@hono/node-server';
 import app from './app.js';
 import { getJobRunner } from './jobs/job-runner.js';

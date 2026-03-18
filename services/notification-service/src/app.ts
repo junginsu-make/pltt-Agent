@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { rateLimiter } from '@palette/shared/middleware/rate-limiter.js';
-import { AppError } from '@palette/shared/errors/index.js';
+import { rateLimiter } from '@palette/shared/middleware/rate-limiter';
+import { AppError } from '@palette/shared/errors/index';
 import notificationRoutes from './routes/notifications.js';
 
 const app = new Hono();

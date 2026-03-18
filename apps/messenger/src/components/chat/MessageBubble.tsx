@@ -22,8 +22,8 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     message.senderType === 'human' &&
     !isMe;
 
-  // System messages
-  if (message.senderType === 'system') {
+  // System messages (but not approval cards — those need full rendering)
+  if (message.senderType === 'system' && message.contentType !== 'approval') {
     return (
       <div data-testid="system-notification" className="flex justify-center px-4 py-2">
         <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] text-gray-500">
@@ -50,7 +50,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     return null;
   };
 
-  const isLlm = message.senderType === 'llm';
+  const isLlm = message.senderType === 'llm' || message.contentType === 'approval';
   const cardContent = renderCardContent();
   const delegationInfo = (message.metadata as Record<string, unknown>)?.delegation as
     | { from?: string; chain?: string[] }

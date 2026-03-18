@@ -1,14 +1,14 @@
 import { relations } from 'drizzle-orm';
-import { teams } from './teams.js';
-import { employees } from './employees.js';
-import { userLlmConfigs } from './user-llm-configs.js';
-import { leavePolicies } from './leave-policies.js';
-import { leaveBalances } from './leave-balances.js';
-import { leaveRequests } from './leave-requests.js';
-import { approvals } from './approvals.js';
-import { channels } from './channels.js';
-import { messages } from './messages.js';
-import { leaveAccrualLog } from './leave-accrual-log.js';
+import { teams } from './teams';
+import { employees } from './employees';
+import { userLlmConfigs } from './user-llm-configs';
+import { leavePolicies } from './leave-policies';
+import { leaveBalances } from './leave-balances';
+import { leaveRequests } from './leave-requests';
+import { approvals } from './approvals';
+import { channels } from './channels';
+import { messages } from './messages';
+import { leaveAccrualLog } from './leave-accrual-log';
 
 // --- Teams Relations ---
 export const teamsRelations = relations(teams, ({ one, many }) => ({

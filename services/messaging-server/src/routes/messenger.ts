@@ -19,6 +19,7 @@ const sendSchema = z.object({
   channel_id: z.string().min(1),
   content: z.string().min(1),
   content_type: z.enum(['text', 'card', 'approval', 'notification']).default('text'),
+  card_data: z.record(z.unknown()).optional(),
 });
 
 messenger.post('/send', async (c) => {
@@ -42,7 +43,7 @@ messenger.post('/send', async (c) => {
     );
   }
 
-  const { channel_id, content, content_type } = parsed.data;
+  const { channel_id, content, content_type, card_data } = parsed.data;
 
   // Verify channel exists
   const channel = await channelService.getChannelById(channel_id);
@@ -50,14 +51,16 @@ messenger.post('/send', async (c) => {
     return c.json({ error: { code: 'NOT_FOUND', message: '채널을 찾을 수 없습니다' } }, 404);
   }
 
-  // Save message
+  // Save message (approval/notification types use 'llm' sender for card rendering)
+  const senderType = (content_type === 'approval' || content_type === 'notification') ? 'llm' : 'human';
   const message = await messageService.saveMessage({
     channelId: channel_id,
-    senderType: 'human',
-    senderUserId: user.employeeId,
-    displayName: user.name,
+    senderType,
+    senderUserId: senderType === 'llm' ? 'system' : user.employeeId,
+    displayName: senderType === 'llm' ? '결재 알림' : user.name,
     contentType: content_type,
     contentText: content,
+    cardData: card_data,
   });
 
   // Route message
