@@ -221,7 +221,8 @@ test.describe.serial('Scenario A: 직원 휴가 신청 → 승인', () => {
 
     // Wait for AI to acknowledge the date and ask for reason
     // The AI validates the date first, then asks for leave reason
-    await employeeChat.waitForAIResponse('이유');
+    // AI may use "이유" or "사유" when asking for reason
+    await employeeChat.waitForAIResponse('사유');
   });
 
   test('Step 5: AI가 사유 입력 요청 → 사유 입력', async () => {
@@ -265,8 +266,11 @@ test.describe.serial('Scenario A: 직원 휴가 신청 → 승인', () => {
   });
 
   test('Step 8: 결재 카드에서 "승인" 클릭', async () => {
-    // Manager should see an approval card (either in notification channel or work channel)
-    // Look for the approval card in any visible channel
+    // Navigate to manager's notification channel where approval card is sent
+    await managerPage.goto('/channels/ch-notification-EMP-DEV-LEADER');
+    await managerPage.locator(SELECTORS.MESSAGE_LIST).waitFor({ state: 'visible', timeout: 10000 });
+
+    // Wait for approval card to appear
     await managerChat.waitForApprovalCard();
 
     const approvalCard = managerPage.locator(SELECTORS.APPROVAL_CARD).last();

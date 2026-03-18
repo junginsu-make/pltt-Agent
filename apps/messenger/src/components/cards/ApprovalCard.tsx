@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import api from '@/lib/api';
+import { useAuthStore } from '@/stores/auth-store';
 
 interface ApprovalCardProps {
   data: Record<string, unknown>;
@@ -10,6 +10,7 @@ interface ApprovalCardProps {
 export default function ApprovalCard({ data }: ApprovalCardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [decided, setDecided] = useState(false);
+  const currentUser = useAuthStore((s) => s.user);
 
   const approvalId = data.approvalId as string;
   const employeeName = (data.employeeName as string) || '';
@@ -22,7 +23,20 @@ export default function ApprovalCard({ data }: ApprovalCardProps) {
   const handleDecide = async (decision: 'approve' | 'reject') => {
     setIsSubmitting(true);
     try {
-      await api.post(`/approvals/${approvalId}/decide`, { decision });
+      const approvalServiceUrl = process.env.NEXT_PUBLIC_APPROVAL_SERVICE_URL || 'http://localhost:3002/api/v1';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('palette_token') : null;
+      await fetch(`${approvalServiceUrl}/approvals/${approvalId}/decide`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          decision: decision === 'approve' ? 'approved' : 'rejected',
+          decided_by: currentUser?.id ?? '',
+          comment: decision === 'approve' ? '승인합니다' : '',
+        }),
+      });
       setDecided(true);
     } catch {
       /* handle error silently */

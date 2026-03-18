@@ -1,7 +1,8 @@
-import { db, employees } from '@palette/db';
+import { db, employees, messages as messagesTable } from '@palette/db';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { createServiceToken } from '@palette/shared/middleware/service-auth';
+import { createServiceToken, type ServiceJwtPayload } from '@palette/shared/middleware/service-auth';
+import { generateMessageId } from '@palette/shared';
 
 function getServiceHeaders(): Record<string, string> {
   return {
@@ -136,7 +137,73 @@ async function submitLeaveRequest(input: Record<string, unknown>): Promise<ToolR
       error: (err as Record<string, Record<string, string>>)?.error?.message || `Failed to submit: ${res.status}`,
     };
   }
-  return { success: true, data: await res.json() };
+  const leaveData = await res.json() as {
+    data: {
+      type: string;
+      request: { id: string; employee_id: string; start_date: string; end_date: string; days: number; reason: string };
+      approval: { approver_id: string | null; approver_name: string | null };
+    };
+  };
+
+  // Auto-create approval request if approver exists
+  const req = leaveData.data.request;
+  const appr = leaveData.data.approval;
+  if (appr?.approver_id) {
+    try {
+      const approvalRes = await fetch(`${APPROVAL_SERVICE_URL}/approvals`, {
+        method: 'POST',
+        headers: getServiceHeaders(),
+        body: JSON.stringify({
+          type: 'leave_request',
+          related_id: req.id,
+          requested_by: req.employee_id,
+          approver_id: appr.approver_id,
+          request_summary: `${req.start_date}~${req.end_date} ${req.days}일 연차 (${req.reason ?? ''})`,
+          auto_approve_hours: 2,
+        }),
+      });
+
+      if (approvalRes.ok) {
+        const approvalData = await approvalRes.json() as { data: { id: string; auto_approve_at: string | null } };
+
+        // Send approval notification to approver's notification channel
+        const employeeRes = await db
+          .select({ name: employees.name })
+          .from(employees)
+          .where(eq(employees.id, req.employee_id));
+        const employeeName = employeeRes[0]?.name ?? req.employee_id;
+
+        const notificationChannelId = `ch-notification-${appr.approver_id}`;
+
+        // Directly insert into messages table for the approver's notification channel
+        await db.insert(messagesTable).values({
+          id: generateMessageId(),
+          channelId: notificationChannelId,
+          senderType: 'system',
+          senderUserId: 'system',
+          displayName: '시스템 알림',
+          contentType: 'approval',
+          contentText: `${employeeName}님이 ${req.start_date} ~ ${req.end_date} (${req.days}일) 연차를 신청했습니다. 사유: ${req.reason ?? ''}`,
+          cardData: {
+            type: 'approval',
+            approvalId: approvalData.data.id,
+            employeeName,
+            date: `${req.start_date} ~ ${req.end_date}`,
+            leaveType: '연차',
+            reason: req.reason ?? '',
+            days: req.days,
+            autoApproveAt: approvalData.data.auto_approve_at,
+          },
+          isLlmAuto: false,
+          readBy: [],
+        });
+      }
+    } catch (err) {
+      console.error('[tool-executor] Failed to create approval:', err);
+    }
+  }
+
+  return { success: true, data: leaveData };
 }
 
 async function searchPolicy(_query: string): Promise<ToolResult> {
